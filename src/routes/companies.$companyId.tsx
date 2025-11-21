@@ -1,0 +1,581 @@
+import { createRoute, useNavigate, Link } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { NotFound } from '@/components/ui/not-found'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Separator } from '@/components/ui/separator'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { CompanyUsersTable } from '@/components/companies/CompanyUsersTable'
+import { AddUserDialog } from '@/components/companies/AddUserDialog'
+import { UpdateRoleDialog } from '@/components/companies/UpdateRoleDialog'
+import { SMTPConfigList } from '@/components/companies/SMTPConfigList'
+import { SMTPConfigDialog } from '@/components/companies/SMTPConfigDialog'
+import { EmailComposerDialog } from '@/components/emails/EmailComposerDialog'
+import { 
+  useCompany, 
+  useCompanyUsers, 
+  useInitializeCompanyInventory,
+  useAddUserToCompany,
+  useRemoveUserFromCompany,
+  useUpdateCompanyUserRole,
+} from '@/hooks/queries/use-companies'
+import {
+  useSMTPConfigs,
+  useCreateSMTPConfig,
+} from '@/hooks/queries/use-smtp-configs'
+import { apiClient } from '@/lib/api-client'
+import { toast } from 'sonner'
+import { useQueryClient } from '@tanstack/react-query'
+import { useSelectedCompany } from '@/hooks/use-selected-company'
+import { useAuth } from '@/hooks/use-auth'
+import { ArrowLeft, Edit, Users, Package, Truck, Warehouse, Store, Mail, Plus } from 'lucide-react'
+import { rootRoute } from '@/main'
+import type { UserWithRole, SMTPConfigResponse, CreateSMTPConfigRequest, UpdateSMTPConfigRequest, SMTPSecurityType } from '@/types/api'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+
+export const CompanyDetailsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/companies/$companyId',
+  component: CompanyDetailsPage,
+})
+
+function CompanyDetailsPage() {
+  const navigate = useNavigate()
+  const { companyId } = CompanyDetailsRoute.useParams()
+  const companyIdNum = Number(companyId)
+  const { data: company, isLoading } = useCompany(companyIdNum)
+  const { data: users, isLoading: usersLoading } = useCompanyUsers(companyIdNum)
+  const { selectCompany } = useSelectedCompany()
+  const { user: currentUser } = useAuth()
+  const initializeInventory = useInitializeCompanyInventory(companyIdNum)
+  const addUserMutation = useAddUserToCompany(companyIdNum)
+  const removeUserMutation = useRemoveUserFromCompany(companyIdNum)
+  const updateRoleMutation = useUpdateCompanyUserRole(companyIdNum)
+
+  const [addUserDialogOpen, setAddUserDialogOpen] = useState(false)
+  const [updateRoleDialogOpen, setUpdateRoleDialogOpen] = useState(false)
+  const [userToUpdate, setUserToUpdate] = useState<UserWithRole | null>(null)
+  const [userToRemove, setUserToRemove] = useState<UserWithRole | null>(null)
+  const [removeUserDialogOpen, setRemoveUserDialogOpen] = useState(false)
+  
+  // SMTP Config state
+  const { data: smtpConfigs, isLoading: smtpConfigsLoading } = useSMTPConfigs(companyIdNum)
+  const createSMTPConfig = useCreateSMTPConfig(companyIdNum)
+  const queryClient = useQueryClient()
+  
+  const [smtpConfigDialogOpen, setSmtpConfigDialogOpen] = useState(false)
+  const [smtpConfigToEdit, setSmtpConfigToEdit] = useState<SMTPConfigResponse | null>(null)
+  const [smtpConfigToDelete, setSmtpConfigToDelete] = useState<SMTPConfigResponse | null>(null)
+  const [deleteSMTPConfigDialogOpen, setDeleteSMTPConfigDialogOpen] = useState(false)
+  const [emailComposerOpen, setEmailComposerOpen] = useState(false)
+
+  // Sync the selected company with the URL param
+  useEffect(() => {
+    if (company) {
+      selectCompany(company)
+    }
+  }, [company])
+
+  const handleInitializeInventory = async () => {
+    await initializeInventory.mutateAsync()
+  }
+
+  const handleAddUser = async (data: { email: string; role: string }) => {
+    await addUserMutation.mutateAsync(data)
+    setAddUserDialogOpen(false)
+  }
+
+  const handleUpdateRole = (user: UserWithRole) => {
+    setUserToUpdate(user)
+    setUpdateRoleDialogOpen(true)
+  }
+
+  const handleConfirmUpdateRole = async (data: { role: string }) => {
+    if (userToUpdate) {
+      await updateRoleMutation.mutateAsync({ userId: userToUpdate.id, role: data.role })
+      setUpdateRoleDialogOpen(false)
+      setUserToUpdate(null)
+    }
+  }
+
+  const handleRemoveUser = (user: UserWithRole) => {
+    setUserToRemove(user)
+    setRemoveUserDialogOpen(true)
+  }
+
+  const confirmRemoveUser = async () => {
+    if (userToRemove) {
+      await removeUserMutation.mutateAsync(userToRemove.id)
+      setRemoveUserDialogOpen(false)
+      setUserToRemove(null)
+    }
+  }
+
+  // SMTP Config handlers
+  const handleCreateSMTPConfig = () => {
+    setSmtpConfigToEdit(null)
+    setSmtpConfigDialogOpen(true)
+  }
+
+  const handleEditSMTPConfig = (config: SMTPConfigResponse) => {
+    setSmtpConfigToEdit(config)
+    setSmtpConfigDialogOpen(true)
+  }
+
+  const handleSubmitSMTPConfig = async (data: {
+    host: string
+    user: string
+    password?: string
+    port: number
+    from_name?: string
+    security: SMTPSecurityType
+    rate_limit?: number
+    is_active?: boolean
+  }) => {
+    try {
+      if (smtpConfigToEdit) {
+        // Update existing config
+        const updateData: UpdateSMTPConfigRequest = {
+          host: data.host,
+          user: data.user,
+          port: data.port,
+          from_name: data.from_name,
+          security: data.security,
+          rate_limit: data.rate_limit,
+          is_active: data.is_active,
+        }
+        if (data.password) {
+          updateData.password = data.password
+        }
+        await apiClient.smtpConfigs.update(companyIdNum, smtpConfigToEdit.id, updateData)
+        queryClient.invalidateQueries({ queryKey: ['companies', companyIdNum, 'smtp-configs'] })
+        toast.success('SMTP config updated successfully')
+        setSmtpConfigDialogOpen(false)
+        setSmtpConfigToEdit(null)
+      } else {
+        // Create new config
+        const createData: CreateSMTPConfigRequest = {
+          host: data.host,
+          user: data.user,
+          password: data.password || '',
+          port: data.port,
+          from_name: data.from_name,
+          security: data.security,
+          rate_limit: data.rate_limit,
+          is_active: data.is_active,
+        }
+        await createSMTPConfig.mutateAsync(createData)
+        setSmtpConfigDialogOpen(false)
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save SMTP config')
+    }
+  }
+
+  const handleDeleteSMTPConfig = (config: SMTPConfigResponse) => {
+    setSmtpConfigToDelete(config)
+    setDeleteSMTPConfigDialogOpen(true)
+  }
+
+  const confirmDeleteSMTPConfig = async () => {
+    if (smtpConfigToDelete) {
+      try {
+        await apiClient.smtpConfigs.delete(companyIdNum, smtpConfigToDelete.id)
+        queryClient.invalidateQueries({ queryKey: ['companies', companyIdNum, 'smtp-configs'] })
+        toast.success('SMTP config deleted successfully')
+        setDeleteSMTPConfigDialogOpen(false)
+        setSmtpConfigToDelete(null)
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to delete SMTP config')
+      }
+    }
+  }
+
+  const handleSetDefaultSMTPConfig = async (config: SMTPConfigResponse) => {
+    try {
+      await apiClient.smtpConfigs.setDefault(companyIdNum, config.id)
+      queryClient.invalidateQueries({ queryKey: ['companies', companyIdNum, 'smtp-configs'] })
+      toast.success('Default SMTP config set successfully')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to set default SMTP config')
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <RoleBasedLayout>
+        <div className="space-y-6">
+          <Skeleton className="h-10 w-64" />
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48 mb-2" />
+              <Skeleton className="h-4 w-32" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-20 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </RoleBasedLayout>
+    )
+  }
+
+  if (!company) {
+    return (
+      <RoleBasedLayout>
+        <NotFound 
+          title="Company not found"
+          message="The company you're looking for doesn't exist or you don't have access to it."
+          backTo="/companies"
+          backLabel="Back to Companies"
+        />
+      </RoleBasedLayout>
+    )
+  }
+
+  return (
+    <RoleBasedLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              onClick={() => navigate({ to: '/companies' })}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                {company.name}
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">
+                Code: {company.code}
+              </p>
+            </div>
+            <Badge variant={company.is_active ? 'default' : 'secondary'}>
+              {company.is_active ? 'Active' : 'Inactive'}
+            </Badge>
+          </div>
+          <Link to={`/companies/${company.id}/edit`}>
+            <Button variant="outline">
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
+          </Link>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Company Details</CardTitle>
+              <CardDescription>Basic information about the company</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Name
+                </p>
+                <p className="mt-1 text-lg">{company.name}</p>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Code
+                </p>
+                <p className="mt-1 font-mono">{company.code}</p>
+              </div>
+              <Separator />
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Description
+                </p>
+                <p className="mt-1">{company.description || 'No description provided'}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Team Members</CardTitle>
+                <CardDescription>Users with access to this company</CardDescription>
+              </div>
+              <Users className="h-5 w-5 text-gray-400" />
+            </CardHeader>
+            <CardContent>
+              {usersLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : users && users.length > 0 ? (
+                <div className="space-y-3">
+                  {users.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">
+                          {user.first_name} {user.last_name}
+                        </p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                      </div>
+                      <Badge variant="outline">{user.role}</Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No team members yet</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Manage products, suppliers, inventory, and settings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Link to={`/companies/${company.id}/products`}>
+                <Button variant="outline" className="w-full h-24 flex-col">
+                  <Package className="h-8 w-8 mb-2" />
+                  <span>Manage Products</span>
+                </Button>
+              </Link>
+              <Link to={`/companies/${company.id}/suppliers`}>
+                <Button variant="outline" className="w-full h-24 flex-col">
+                  <Truck className="h-8 w-8 mb-2" />
+                  <span>Manage Suppliers</span>
+                </Button>
+              </Link>
+              <Link to={`/companies/${company.id}/inventory`}>
+                <Button variant="outline" className="w-full h-24 flex-col">
+                  <Warehouse className="h-8 w-8 mb-2" />
+                  <span>Manage Inventory</span>
+                </Button>
+              </Link>
+              <Link to={`/companies/${company.id}/franchises`}>
+                <Button variant="outline" className="w-full h-24 flex-col">
+                  <Store className="h-8 w-8 mb-2" />
+                  <span>Manage Franchises</span>
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                className="w-full h-24 flex-col"
+                onClick={handleInitializeInventory}
+                disabled={initializeInventory.isPending}
+              >
+                <Warehouse className="h-8 w-8 mb-2" />
+                <span>
+                  {initializeInventory.isPending ? 'Initializing...' : 'Initialize Inventory'}
+                </span>
+              </Button>
+              <Link to={`/companies/${company.id}/edit`}>
+                <Button variant="outline" className="w-full h-24 flex-col">
+                  <Edit className="h-8 w-8 mb-2" />
+                  <span>Edit Company</span>
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* IAM Management Tab */}
+        <Tabs defaultValue="users" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="users">User Management</TabsTrigger>
+            <TabsTrigger value="smtp">SMTP Config</TabsTrigger>
+            <TabsTrigger value="emails">Send Email</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="users" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Company Users</CardTitle>
+                    <CardDescription>
+                      Manage users who have access to this company
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => setAddUserDialogOpen(true)}>
+                    Add User
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {usersLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : (
+                  <CompanyUsersTable
+                    users={users || []}
+                    onRemoveUser={handleRemoveUser}
+                    onUpdateRole={handleUpdateRole}
+                    currentUserId={currentUser?.id}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="smtp" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>SMTP Email Configurations</CardTitle>
+                    <CardDescription>
+                      Manage email sending configurations for this company. Each company can have multiple SMTP configs.
+                    </CardDescription>
+                  </div>
+                  <Button onClick={handleCreateSMTPConfig}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add SMTP Config
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {smtpConfigsLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : (
+                  <SMTPConfigList
+                    configs={smtpConfigs || []}
+                    onEdit={handleEditSMTPConfig}
+                    onDelete={handleDeleteSMTPConfig}
+                    onSetDefault={handleSetDefaultSMTPConfig}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="emails" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Send Email</CardTitle>
+                    <CardDescription>
+                      Compose and send emails using your company's SMTP configuration
+                    </CardDescription>
+                  </div>
+                  <Button onClick={() => setEmailComposerOpen(true)}>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Compose Email
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-12 text-gray-500">
+                  <Mail className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="mb-4">Click "Compose Email" to create and send an email</p>
+                  <p className="text-sm">Emails will be queued and sent using your default SMTP configuration</p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Dialogs */}
+      <AddUserDialog
+        open={addUserDialogOpen}
+        onOpenChange={setAddUserDialogOpen}
+        onSubmit={handleAddUser}
+        isLoading={addUserMutation.isPending}
+      />
+
+      <UpdateRoleDialog
+        open={updateRoleDialogOpen}
+        onOpenChange={(open) => {
+          setUpdateRoleDialogOpen(open)
+          if (!open) setUserToUpdate(null)
+        }}
+        user={userToUpdate}
+        onSubmit={handleConfirmUpdateRole}
+        isLoading={updateRoleMutation.isPending}
+      />
+
+      <AlertDialog open={removeUserDialogOpen} onOpenChange={setRemoveUserDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove User</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove {userToRemove?.first_name} {userToRemove?.last_name} from this company?
+              They will no longer have access to this company's data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRemoveUser}>
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* SMTP Config Dialogs */}
+      <SMTPConfigDialog
+        open={smtpConfigDialogOpen}
+        onOpenChange={(open) => {
+          setSmtpConfigDialogOpen(open)
+          if (!open) setSmtpConfigToEdit(null)
+        }}
+        initialData={smtpConfigToEdit || undefined}
+        onSubmit={handleSubmitSMTPConfig}
+        isLoading={createSMTPConfig.isPending}
+      />
+
+      <AlertDialog open={deleteSMTPConfigDialogOpen} onOpenChange={setDeleteSMTPConfigDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete SMTP Configuration</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the SMTP configuration for {smtpConfigToDelete?.host}?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteSMTPConfig}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Email Composer Dialog */}
+      <EmailComposerDialog
+        open={emailComposerOpen}
+        onOpenChange={setEmailComposerOpen}
+        companyId={companyIdNum}
+      />
+    </RoleBasedLayout>
+  )
+}
+
+
+

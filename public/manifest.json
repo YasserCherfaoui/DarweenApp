@@ -1,0 +1,25 @@
+{
+  "short_name": "Darween ERP",
+  "name": "Darween ERP Platform",
+  "icons": [
+    {
+      "src": "PNG/Darween.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "PNG/Darween@2x.png",
+      "type": "image/png",
+      "sizes": "384x384"
+    },
+    {
+      "src": "PNG/Darween@3x.png",
+      "type": "image/png",
+      "sizes": "576x576"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}

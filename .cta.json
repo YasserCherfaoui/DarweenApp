@@ -1,0 +1,21 @@
+{
+  "projectName": "app",
+  "mode": "code-router",
+  "typescript": true,
+  "tailwind": true,
+  "packageManager": "npm",
+  "addOnOptions": {},
+  "git": true,
+  "version": 1,
+  "framework": "react-cra",
+  "chosenAddOns": [
+    "compiler",
+    "form",
+    "module-federation",
+    "shadcn",
+    "t3env",
+    "table",
+    "store",
+    "tanstack-query"
+  ]
+}

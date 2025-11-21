@@ -1,0 +1,50 @@
+import { useStore } from '@tanstack/react-store'
+import { companyStore } from '@/stores/company-store'
+import type { UserRole } from '@/types/api'
+
+export interface UseUserRoleReturn {
+  role: UserRole | null
+  isOwner: boolean
+  isAdmin: boolean
+  isManager: boolean
+  isEmployee: boolean
+  isPOSUser: boolean // Employee role - POS-focused UI
+  isAdminUser: boolean // Owner/Admin/Manager - Full admin UI
+  hasAdminAccess: boolean // Can access admin features
+  hasManagerAccess: boolean // Can access manager features
+}
+
+export const useUserRole = (): UseUserRoleReturn => {
+  const { userRole } = useStore(companyStore)
+
+  const isOwner = userRole === 'owner'
+  const isAdmin = userRole === 'admin'
+  const isManager = userRole === 'manager'
+  const isEmployee = userRole === 'employee'
+
+  // POS users are employees only - they get the POS-focused interface
+  const isPOSUser = isEmployee
+
+  // Admin users are owner, admin, or manager - they get the full admin interface
+  const isAdminUser = isOwner || isAdmin || isManager
+
+  // Admin access includes owner and admin roles
+  const hasAdminAccess = isOwner || isAdmin
+
+  // Manager access includes owner, admin, and manager roles
+  const hasManagerAccess = isOwner || isAdmin || isManager
+
+  return {
+    role: userRole,
+    isOwner,
+    isAdmin,
+    isManager,
+    isEmployee,
+    isPOSUser,
+    isAdminUser,
+    hasAdminAccess,
+    hasManagerAccess,
+  }
+}
+
+
