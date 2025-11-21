@@ -11,6 +11,7 @@ import { FranchisePricingDialog } from '@/components/franchises/FranchisePricing
 import { FranchiseUsersTable } from '@/components/franchises/FranchiseUsersTable'
 import { AddUserDialog } from '@/components/franchises/AddUserDialog'
 import { UpdateRoleDialog } from '@/components/franchises/UpdateRoleDialog'
+import { CredentialsDialog } from '@/components/franchises/CredentialsDialog'
 import {
   useFranchise,
   useFranchisePricing,
@@ -26,7 +27,7 @@ import {
 import { useAuth } from '@/hooks/use-auth'
 import { ArrowLeft, Edit, MapPin, Phone, Mail, Package, DollarSign, Users, FileText } from 'lucide-react'
 import { rootRoute } from '@/main'
-import type { FranchisePricing, UserWithRole } from '@/types/api'
+import type { FranchisePricing, UserWithRole, AddUserToFranchiseResponse } from '@/types/api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,6 +65,8 @@ function CompanyFranchisePage() {
   const [pricingToDelete, setPricingToDelete] = useState<FranchisePricing | null>(null)
   const [userToRemove, setUserToRemove] = useState<UserWithRole | null>(null)
   const [removeUserDialogOpen, setRemoveUserDialogOpen] = useState(false)
+  const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false)
+  const [credentialsData, setCredentialsData] = useState<AddUserToFranchiseResponse | null>(null)
 
   const setPricingMutation = useSetFranchisePricing(franchiseIdNum)
   const bulkSetPricingMutation = useBulkSetFranchisePricing(franchiseIdNum)
@@ -120,8 +123,18 @@ function CompanyFranchisePage() {
     email: string
     role: 'owner' | 'admin' | 'manager' | 'employee'
   }) => {
-    await addUserMutation.mutateAsync(data)
-    setAddUserDialogOpen(false)
+    try {
+      const response = await addUserMutation.mutateAsync(data)
+      setAddUserDialogOpen(false)
+      
+      // If user was created, show credentials dialog
+      if (response.data?.user_created && response.data?.credentials) {
+        setCredentialsData(response.data)
+        setCredentialsDialogOpen(true)
+      }
+    } catch (error) {
+      // Error is handled by the mutation
+    }
   }
 
   const handleRemoveUser = (user: UserWithRole) => {
@@ -419,6 +432,18 @@ function CompanyFranchisePage() {
         onOpenChange={setAddUserDialogOpen}
         onSubmit={handleAddUser}
         isLoading={addUserMutation.isPending}
+      />
+
+      <CredentialsDialog
+        open={credentialsDialogOpen}
+        onOpenChange={(open) => {
+          setCredentialsDialogOpen(open)
+          if (!open) {
+            setCredentialsData(null)
+          }
+        }}
+        credentials={credentialsData?.credentials || null}
+        emailSent={credentialsData?.email_sent || false}
       />
 
       <UpdateRoleDialog

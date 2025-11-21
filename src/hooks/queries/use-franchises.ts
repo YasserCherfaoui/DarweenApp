@@ -6,6 +6,7 @@ import type {
   SetFranchisePricingRequest,
   BulkSetFranchisePricingRequest,
   AddUserToFranchiseRequest,
+  AddUserToFranchiseResponse,
 } from '@/types/api'
 import { toast } from 'sonner'
 
@@ -143,11 +144,15 @@ export const useAddUserToFranchise = (franchiseId: number) => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: (data: AddUserToFranchiseRequest) => 
+    mutationFn: (data: AddUserToFranchiseRequest): Promise<{ data: AddUserToFranchiseResponse }> => 
       apiClient.franchises.addUser(franchiseId, data),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['franchises', franchiseId, 'users'] })
-      toast.success('User added successfully')
+      if (response.data.user_created) {
+        toast.success('User created and added to franchise successfully')
+      } else {
+        toast.success('User added to franchise successfully')
+      }
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to add user')

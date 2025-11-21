@@ -52,6 +52,9 @@ import { FranchiseWarehouseBillDetailRoute } from './routes/franchises.$franchis
 import { CreateCompanyRoute } from './routes/companies.create'
 import { CompaniesRoute } from './routes/companies.index'
 import { DashboardRoute } from './routes/dashboard.index'
+import { AcceptInvitationRoute } from './routes/auth.accept-invitation'
+import { SetupAccountRoute } from './routes/auth.setup-account'
+import { ChangePasswordOTPRoute } from './routes/auth.change-password-otp'
 
 import reportWebVitals from './reportWebVitals.ts'
 import './styles.css'
@@ -72,6 +75,9 @@ export const rootRoute = createRootRoute({
 const routeTree = rootRoute.addChildren([
   LoginRoute,
   RegisterRoute,
+  AcceptInvitationRoute,
+  SetupAccountRoute,
+  ChangePasswordOTPRoute,
   DashboardRoute,
   CompaniesRoute,
   CreateCompanyRoute,

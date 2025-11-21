@@ -17,7 +17,7 @@ function CreateCompanyPage() {
   const navigate = useNavigate()
   const createCompany = useCreateCompany()
 
-  const handleSubmit = async (data: { name: string; code: string; description?: string }) => {
+  const handleSubmit = async (data: { name: string; code: string; description?: string; erp_url?: string }) => {
     const result = await createCompany.mutateAsync(data)
     if (result.success && result.data) {
       navigate({ to: `/companies/${result.data.id}` })

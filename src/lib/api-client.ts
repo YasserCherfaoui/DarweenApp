@@ -4,10 +4,16 @@ import type {
   LoginRequest,
   RegisterRequest,
   AuthResponse,
+  ValidateInvitationResponse,
+  AcceptInvitationRequest,
+  ValidateOTPResponse,
+  CompleteUserSetupRequest,
+  ChangePasswordWithOTPRequest,
   Company,
   CreateCompanyRequest,
   UpdateCompanyRequest,
   AddUserToCompanyRequest,
+  AddUserToCompanyResponse,
   UserWithRole,
   Subscription,
   UpdateSubscriptionRequest,
@@ -31,6 +37,7 @@ import type {
   BulkSetFranchisePricingRequest,
   BulkSetFranchisePricingResponse,
   AddUserToFranchiseRequest,
+  AddUserToFranchiseResponse,
   Inventory,
   InventoryListResponse,
   CreateInventoryRequest,
@@ -143,6 +150,52 @@ class ApiClient {
         body: JSON.stringify(data),
       })
     },
+
+    validateInvitation: async (
+      token: string
+    ): Promise<ApiResponse<ValidateInvitationResponse>> => {
+      return this.request('/auth/invitation/validate', {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      })
+    },
+
+    acceptInvitation: async (
+      data: AcceptInvitationRequest
+    ): Promise<ApiResponse<AuthResponse>> => {
+      return this.request('/auth/invitation/accept', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+
+    validateOTP: async (
+      code: string,
+      email: string
+    ): Promise<ApiResponse<ValidateOTPResponse>> => {
+      return this.request('/auth/otp/validate', {
+        method: 'POST',
+        body: JSON.stringify({ code, email }),
+      })
+    },
+
+    completeUserSetup: async (
+      data: CompleteUserSetupRequest
+    ): Promise<ApiResponse<AuthResponse>> => {
+      return this.request('/auth/otp/setup', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+
+    changePasswordWithOTP: async (
+      data: ChangePasswordWithOTPRequest
+    ): Promise<ApiResponse<{ message: string }>> => {
+      return this.request('/auth/otp/change-password', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
   }
 
   // User endpoints
@@ -197,7 +250,7 @@ class ApiClient {
     addUser: async (
       id: number,
       data: AddUserToCompanyRequest
-    ): Promise<ApiResponse<null>> => {
+    ): Promise<ApiResponse<AddUserToCompanyResponse>> => {
       return this.request(`/companies/${id}/users`, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -652,7 +705,7 @@ class ApiClient {
     addUser: async (
       franchiseId: number,
       data: AddUserToFranchiseRequest
-    ): Promise<ApiResponse<null>> => {
+    ): Promise<ApiResponse<AddUserToFranchiseResponse>> => {
       return this.request(`/franchises/${franchiseId}/users`, {
         method: 'POST',
         body: JSON.stringify(data),

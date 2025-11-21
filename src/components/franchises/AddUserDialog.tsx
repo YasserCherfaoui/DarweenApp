@@ -14,14 +14,15 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 
 const cn = (...classes: (string | boolean | undefined)[]) => {
   return classes.filter(Boolean).join(' ')
 }
 
 const addUserSchema = z.object({
-  email: z.string().min(1, 'Email is required').email('Please enter a valid email address'),
+  email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Please enter a valid email address' }),
   role: z.enum(['owner', 'admin', 'manager', 'employee'], {
     required_error: 'Please select a role',
   }),
@@ -89,9 +90,30 @@ export function AddUserDialog({
         <DialogHeader>
           <DialogTitle>Add User to Franchise</DialogTitle>
           <DialogDescription>
-            Add an existing user to this franchise by entering their email address and selecting a role.
+            Add a user to this franchise by entering their email address and selecting a role.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Form State Indicator */}
+        {Object.keys(form.formState.dirtyFields).length > 0 && (
+          <Alert className="border-blue-200 bg-blue-50">
+            <AlertCircle className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              <div className="space-y-1">
+                <div className="font-medium">Form Status:</div>
+                <div className="text-sm">
+                  {form.formState.isValid ? (
+                    <span className="text-green-700 font-medium">✓ All fields are valid! Ready to submit.</span>
+                  ) : (
+                    <span className="text-orange-700">
+                      {Object.keys(form.formState.errors).length} field(s) need attention
+                    </span>
+                  )}
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -117,7 +139,7 @@ export function AddUserDialog({
                     />
                   </FormControl>
                   <FormDescription>
-                    The user must already be registered in the system
+                    If the user doesn't exist, a new account will be created automatically
                   </FormDescription>
                   <FormMessage className="text-red-600 font-medium" />
                 </FormItem>
@@ -198,4 +220,3 @@ export function AddUserDialog({
     </Dialog>
   )
 }
-

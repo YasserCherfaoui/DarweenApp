@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
-import type { CreateCompanyRequest, UpdateCompanyRequest, AddUserToCompanyRequest } from '@/types/api'
+import type { CreateCompanyRequest, UpdateCompanyRequest, AddUserToCompanyRequest, AddUserToCompanyResponse } from '@/types/api'
 import { toast } from 'sonner'
 
 export const useCompanies = () => {
@@ -70,11 +70,15 @@ export const useAddUserToCompany = (companyId: number) => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: (data: AddUserToCompanyRequest) => 
+    mutationFn: (data: AddUserToCompanyRequest): Promise<{ data: AddUserToCompanyResponse }> => 
       apiClient.companies.addUser(companyId, data),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['companies', companyId, 'users'] })
-      toast.success('User added to company successfully')
+      if (response.data.user_created) {
+        toast.success('User created and added to company successfully')
+      } else {
+        toast.success('User added to company successfully')
+      }
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to add user to company')

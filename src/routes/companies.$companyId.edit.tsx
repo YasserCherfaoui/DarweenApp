@@ -30,7 +30,7 @@ function EditCompanyPage() {
     }
   }, [company])
 
-  const handleSubmit = async (data: { name: string; code: string; description?: string }) => {
+  const handleSubmit = async (data: { name: string; code: string; description?: string; erp_url?: string }) => {
     await updateCompany.mutateAsync(data)
     navigate({ to: `/companies/${companyId}` })
   }

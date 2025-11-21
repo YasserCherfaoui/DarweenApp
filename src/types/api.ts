@@ -58,12 +58,52 @@ export interface AuthResponse {
   role?: UserRole // User's role in the default/first company
 }
 
+export interface ValidateInvitationResponse {
+  email: string
+  company_id: number
+  valid: boolean
+}
+
+export interface AcceptInvitationRequest {
+  token: string
+  first_name: string
+  last_name: string
+  password: string
+}
+
+export interface ValidateOTPRequest {
+  code: string
+  email: string
+}
+
+export interface ValidateOTPResponse {
+  valid: boolean
+  purpose?: string
+  user_id?: number
+}
+
+export interface CompleteUserSetupRequest {
+  code: string
+  email: string
+  first_name: string
+  last_name: string
+  phone?: string
+  password: string
+}
+
+export interface ChangePasswordWithOTPRequest {
+  code: string
+  email: string
+  password: string
+}
+
 // Company types
 export interface Company {
   id: number
   name: string
   code: string
   description?: string
+  erp_url?: string
   is_active: boolean
   created_at?: string
   updated_at?: string
@@ -74,17 +114,30 @@ export interface CreateCompanyRequest {
   name: string
   code: string
   description?: string
+  erp_url?: string
 }
 
 export interface UpdateCompanyRequest {
   name?: string
   description?: string
+  erp_url?: string
   is_active?: boolean
 }
 
 export interface AddUserToCompanyRequest {
   email: string
   role: 'admin' | 'manager' | 'employee'
+}
+
+export interface UserCredentials {
+  email: string
+  password: string
+}
+
+export interface AddUserToCompanyResponse {
+  user_created: boolean
+  email_sent: boolean
+  credentials?: UserCredentials
 }
 
 export interface UpdateUserRoleRequest {

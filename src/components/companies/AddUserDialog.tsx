@@ -117,7 +117,7 @@ export function AddUserDialog({
                     />
                   </FormControl>
                   <FormDescription>
-                    The user must already be registered in the system
+                    If the user doesn't exist, a new account will be created automatically
                   </FormDescription>
                   <FormMessage className="text-red-600 font-medium" />
                 </FormItem>

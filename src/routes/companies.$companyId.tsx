@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { CompanyUsersTable } from '@/components/companies/CompanyUsersTable'
 import { AddUserDialog } from '@/components/companies/AddUserDialog'
 import { UpdateRoleDialog } from '@/components/companies/UpdateRoleDialog'
+import { CredentialsDialog } from '@/components/companies/CredentialsDialog'
 import { SMTPConfigList } from '@/components/companies/SMTPConfigList'
 import { SMTPConfigDialog } from '@/components/companies/SMTPConfigDialog'
 import { EmailComposerDialog } from '@/components/emails/EmailComposerDialog'
@@ -69,6 +70,8 @@ function CompanyDetailsPage() {
   const [userToUpdate, setUserToUpdate] = useState<UserWithRole | null>(null)
   const [userToRemove, setUserToRemove] = useState<UserWithRole | null>(null)
   const [removeUserDialogOpen, setRemoveUserDialogOpen] = useState(false)
+  const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false)
+  const [credentialsData, setCredentialsData] = useState<AddUserToCompanyResponse | null>(null)
   
   // SMTP Config state
   const { data: smtpConfigs, isLoading: smtpConfigsLoading } = useSMTPConfigs(companyIdNum)
@@ -93,8 +96,18 @@ function CompanyDetailsPage() {
   }
 
   const handleAddUser = async (data: { email: string; role: string }) => {
-    await addUserMutation.mutateAsync(data)
-    setAddUserDialogOpen(false)
+    try {
+      const response = await addUserMutation.mutateAsync(data)
+      setAddUserDialogOpen(false)
+      
+      // If user was created, show credentials dialog
+      if (response.data?.user_created && response.data?.credentials) {
+        setCredentialsData(response.data)
+        setCredentialsDialogOpen(true)
+      }
+    } catch (error) {
+      // Error is handled by the mutation
+    }
   }
 
   const handleUpdateRole = (user: UserWithRole) => {
@@ -506,6 +519,18 @@ function CompanyDetailsPage() {
         onOpenChange={setAddUserDialogOpen}
         onSubmit={handleAddUser}
         isLoading={addUserMutation.isPending}
+      />
+
+      <CredentialsDialog
+        open={credentialsDialogOpen}
+        onOpenChange={(open) => {
+          setCredentialsDialogOpen(open)
+          if (!open) {
+            setCredentialsData(null)
+          }
+        }}
+        credentials={credentialsData?.credentials || null}
+        emailSent={credentialsData?.email_sent || false}
       />
 
       <UpdateRoleDialog
