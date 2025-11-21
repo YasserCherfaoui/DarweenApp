@@ -310,6 +310,11 @@ function CompanyFranchisePage() {
                     View Entry Bills
                   </Button>
                 </Link>
+                <Link to={`/companies/${companyId}/franchises/${franchiseId}/warehouse-bills/entry/new`}>
+                  <Button variant="outline" className="w-full">
+                    Create Entry Bill
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

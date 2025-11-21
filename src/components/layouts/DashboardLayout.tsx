@@ -1,9 +1,13 @@
 import { ReactNode } from 'react'
 import { Sidebar } from './Sidebar'
 import { UserMenu } from './UserMenu'
-import { CompanySelector } from './CompanySelector'
+import { PortalSelector } from './PortalSelector'
+import { PortalSelectionScreen } from '@/components/auth/PortalSelectionScreen'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { toggleSidebar } from '@/stores/sidebar-store'
+import { useStore } from '@tanstack/react-store'
+import { portalStore } from '@/stores/portal-store'
+import { useUserPortals } from '@/hooks/queries/use-portals'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -12,6 +16,22 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { selectedPortal } = useStore(portalStore)
+  const { data: portalsData } = useUserPortals()
+  
+  const portals = portalsData?.portals || []
+  const hasMultiplePortals = portals.length > 1
+  const shouldShowSelectionScreen = hasMultiplePortals && !selectedPortal
+
+  // Show portal selection screen if user has multiple portals and none selected
+  if (shouldShowSelectionScreen) {
+    return (
+      <ProtectedRoute>
+        <PortalSelectionScreen />
+      </ProtectedRoute>
+    )
+  }
+
   return (
     <ProtectedRoute>
       <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
@@ -38,7 +58,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   Darween ERP
                 </h1>
               </div>
-              <CompanySelector />
+              <PortalSelector />
             </div>
             <UserMenu />
           </header>

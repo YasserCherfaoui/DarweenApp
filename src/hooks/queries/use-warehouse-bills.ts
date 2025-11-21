@@ -234,6 +234,12 @@ export const useCreateEntryBill = () => {
       queryClient.invalidateQueries({
         queryKey: ['warehouse-bills', 'franchise', variables.franchiseId],
       })
+      queryClient.invalidateQueries({
+        queryKey: ['warehouse-bills', 'company'],
+      })
+      queryClient.invalidateQueries({
+        queryKey: ['inventory'],
+      })
       toast.success('Entry bill created successfully')
     },
     onError: (error: Error) => {

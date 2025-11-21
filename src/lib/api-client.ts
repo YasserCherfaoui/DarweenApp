@@ -9,6 +9,7 @@ import type {
   ValidateOTPResponse,
   CompleteUserSetupRequest,
   ChangePasswordWithOTPRequest,
+  ChangePasswordRequest,
   Company,
   CreateCompanyRequest,
   UpdateCompanyRequest,
@@ -87,6 +88,7 @@ import type {
   SMTPConfigResponse,
   SMTPConfigListResponse,
   SendEmailRequest,
+  UserPortalsResponse,
 } from '@/types/api'
 
 const API_URL = env.VITE_API_URL
@@ -215,6 +217,19 @@ class ApiClient {
 
     listByCompany: async (companyId: number): Promise<ApiResponse<UserWithRole[]>> => {
       return this.request(`/users?company_id=${companyId}`)
+    },
+
+    changePassword: async (
+      data: ChangePasswordRequest
+    ): Promise<ApiResponse<{ message: string }>> => {
+      return this.request('/users/me/password', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      })
+    },
+
+    getPortals: async (): Promise<ApiResponse<UserPortalsResponse>> => {
+      return this.request('/users/me/portals')
     },
   }
 
@@ -1058,6 +1073,28 @@ class ApiClient {
 
   // POS endpoints
   pos = {
+    // Product search endpoints
+    products: {
+      search: async (
+        companyId: number,
+        query: string,
+        franchiseId?: number,
+        limit?: number
+      ): Promise<ApiResponse<ProductVariantSearchResponse[]>> => {
+        const queryParams = new URLSearchParams()
+        queryParams.append('query', query)
+        if (franchiseId) {
+          queryParams.append('franchise_id', franchiseId.toString())
+        }
+        if (limit) {
+          queryParams.append('limit', limit.toString())
+        }
+        return this.request(
+          `/companies/${companyId}/pos/products/search?${queryParams.toString()}`
+        )
+      },
+    },
+
     // Customer endpoints
     customers: {
       list: async (

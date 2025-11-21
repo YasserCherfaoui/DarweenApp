@@ -20,7 +20,9 @@ import { CompanyFranchisesRoute } from './routes/companies.$companyId.franchises
 import { CreateFranchiseRoute } from './routes/companies.$companyId.franchises.create'
 import { CompanyFranchiseRoute } from './routes/companies.$companyId.franchises.$franchiseId'
 import { EditCompanyFranchiseRoute } from './routes/companies.$companyId.franchises.$franchiseId.edit'
-import { FranchiseInventoryRoute } from './routes/companies.$companyId.franchises.$franchiseId.inventory.index'
+import { FranchiseInventoryRoute } from './routes/franchises.$franchiseId.inventory.index'
+import { FranchiseProductsRoute } from './routes/franchises.$franchiseId.products.index'
+import { FranchiseProductDetailsRoute } from './routes/franchises.$franchiseId.products.$productId'
 import { FranchiseInventoryHistoryRoute } from './routes/companies.$companyId.franchises.$franchiseId.inventory.$inventoryId.history'
 import { CompanyInventoryRoute } from './routes/companies.$companyId.inventory.index'
 import { CompanyInventoryHistoryRoute } from './routes/companies.$companyId.inventory.$inventoryId.history'
@@ -43,9 +45,13 @@ import { NewSaleRoute } from './routes/companies.$companyId.pos.sales.new'
 import { SalesHistoryRoute } from './routes/companies.$companyId.pos.sales.index'
 import { CashDrawerRoute } from './routes/companies.$companyId.pos.cash-drawer.index'
 import { FranchisePOSRoute } from './routes/franchises.$franchiseId.pos.index'
+import { FranchiseNewSaleRoute } from './routes/franchises.$franchiseId.pos.sales.new'
+import { FranchiseSalesHistoryRoute } from './routes/franchises.$franchiseId.pos.sales.index'
+import { FranchiseCashDrawerRoute } from './routes/franchises.$franchiseId.pos.cash-drawer.index'
 import { CompanyWarehouseBillsIndexRoute } from './routes/companies.$companyId.warehouse-bills.index'
 import { CompanyWarehouseBillsNewRoute } from './routes/companies.$companyId.warehouse-bills.new'
 import { CompanyWarehouseBillDetailRoute } from './routes/companies.$companyId.warehouse-bills.$billId'
+import { CompanyFranchiseWarehouseBillsEntryNewRoute } from './routes/companies.$companyId.franchises.$franchiseId.warehouse-bills.entry.new'
 import { FranchiseWarehouseBillsIndexRoute } from './routes/franchises.$franchiseId.warehouse-bills.index'
 import { FranchiseWarehouseBillsNewRoute } from './routes/franchises.$franchiseId.warehouse-bills.new'
 import { FranchiseWarehouseBillDetailRoute } from './routes/franchises.$franchiseId.warehouse-bills.$billId'
@@ -55,6 +61,8 @@ import { DashboardRoute } from './routes/dashboard.index'
 import { AcceptInvitationRoute } from './routes/auth.accept-invitation'
 import { SetupAccountRoute } from './routes/auth.setup-account'
 import { ChangePasswordOTPRoute } from './routes/auth.change-password-otp'
+import { ProfileRoute } from './routes/profile.index'
+import { SettingsRoute } from './routes/settings.index'
 
 import reportWebVitals from './reportWebVitals.ts'
 import './styles.css'
@@ -79,6 +87,8 @@ const routeTree = rootRoute.addChildren([
   SetupAccountRoute,
   ChangePasswordOTPRoute,
   DashboardRoute,
+  ProfileRoute,
+  SettingsRoute,
   CompaniesRoute,
   CreateCompanyRoute,
   CompanyDetailsRoute,
@@ -110,9 +120,15 @@ const routeTree = rootRoute.addChildren([
   SalesHistoryRoute,
   CashDrawerRoute,
   FranchisePOSRoute,
+  FranchiseNewSaleRoute,
+  FranchiseSalesHistoryRoute,
+  FranchiseCashDrawerRoute,
+  FranchiseProductsRoute,
+  FranchiseProductDetailsRoute,
   CompanyWarehouseBillsIndexRoute,
   CompanyWarehouseBillsNewRoute,
   CompanyWarehouseBillDetailRoute,
+  CompanyFranchiseWarehouseBillsEntryNewRoute,
   FranchiseWarehouseBillsIndexRoute,
   FranchiseWarehouseBillsNewRoute,
   FranchiseWarehouseBillDetailRoute,

@@ -97,6 +97,27 @@ export interface ChangePasswordWithOTPRequest {
   password: string
 }
 
+export interface ChangePasswordRequest {
+  current_password: string
+  new_password: string
+}
+
+// Portal types
+export type PortalType = 'company' | 'franchise'
+
+export interface Portal {
+  type: PortalType
+  id: number
+  name: string
+  code: string
+  role: UserRole
+  parent_company_id?: number // Only for franchises
+}
+
+export interface UserPortalsResponse {
+  portals: Portal[]
+}
+
 // Company types
 export interface Company {
   id: number
@@ -905,6 +926,7 @@ export interface CreateExitBillRequest {
 export interface CreateEntryBillRequest {
   exit_bill_id: number
   notes?: string
+  items: VerifyEntryBillItemRequest[] // Required - all items to record (from exit bill + extras)
 }
 
 export interface UpdateExitBillItemRequest {

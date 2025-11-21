@@ -1,6 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
-import { companyStore } from '@/stores/company-store'
+import { portalStore } from '@/stores/portal-store'
 import { sidebarStore } from '@/stores/sidebar-store'
 import { cn } from '@/lib/utils'
 import { 
@@ -51,13 +51,42 @@ const getCompanyNavigationSections = (companyId: number): NavigationSection[] =>
   },
 ]
 
+const getFranchiseNavigationSections = (franchiseId: number): NavigationSection[] => [
+  {
+    title: 'Inventory Management',
+    items: [
+      { name: 'Products', to: `/franchises/${franchiseId}/products`, icon: Package },
+      { name: 'Inventory', to: `/franchises/${franchiseId}/inventory`, icon: Warehouse },
+    ]
+  },
+  {
+    title: 'Operations',
+    items: [
+      { name: 'Warehouse Bills', to: `/franchises/${franchiseId}/warehouse-bills`, icon: FileText },
+      { name: 'POS', to: `/franchises/${franchiseId}/pos`, icon: ShoppingCart },
+    ]
+  },
+]
+
 export function Sidebar() {
   const router = useRouterState()
   const currentPath = router.location.pathname
-  const { selectedCompanyId, selectedCompany } = useStore(companyStore)
+  const { selectedPortal, selectedPortalType, selectedPortalId } = useStore(portalStore)
   const { isCollapsed } = useStore(sidebarStore)
 
-  const companyNavigationSections = selectedCompanyId ? getCompanyNavigationSections(selectedCompanyId) : []
+  const companyNavigationSections = 
+    selectedPortalType === 'company' && selectedPortalId 
+      ? getCompanyNavigationSections(selectedPortalId) 
+      : []
+  
+  const franchiseNavigationSections = 
+    selectedPortalType === 'franchise' && selectedPortalId 
+      ? getFranchiseNavigationSections(selectedPortalId) 
+      : []
+  
+  const portalNavigationSections = selectedPortalType === 'company' 
+    ? companyNavigationSections 
+    : franchiseNavigationSections
 
   return (
     <aside 
@@ -87,7 +116,7 @@ export function Sidebar() {
           </div>
         </div>
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-          {/* Global Navigation */}
+          {/* Global Navigation - Only show Dashboard, hide Companies in franchise portal */}
           {!isCollapsed && (
             <div className="px-3 pb-2">
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -95,7 +124,15 @@ export function Sidebar() {
               </p>
             </div>
           )}
-          {globalNavigation.map((item) => {
+          {globalNavigation
+            .filter((item) => {
+              // Hide "Companies" link when in franchise portal
+              if (selectedPortalType === 'franchise' && item.name === 'Companies') {
+                return false
+              }
+              return true
+            })
+            .map((item) => {
             const isActive = currentPath === item.to || 
               (item.to !== '/' && currentPath.startsWith(item.to))
             const Icon = item.icon
@@ -119,13 +156,13 @@ export function Sidebar() {
             )
           })}
           
-          {/* Company-specific Navigation Sections */}
-          {companyNavigationSections.length > 0 && (
+          {/* Portal-specific Navigation Sections */}
+          {portalNavigationSections.length > 0 && (
             <>
               <div className="pt-4 pb-2 px-3">
                 <div className="h-px bg-gray-200 dark:bg-gray-700" />
               </div>
-              {companyNavigationSections.map((section) => (
+              {portalNavigationSections.map((section) => (
                 <div key={section.title} className="mb-4">
                   {!isCollapsed && (
                     <div className="px-3 py-2">

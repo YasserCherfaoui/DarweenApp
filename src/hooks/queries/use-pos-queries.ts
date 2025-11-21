@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { apiClient } from '@/lib/api-client'
 import type {
   Customer,
@@ -13,7 +14,42 @@ import type {
   CloseCashDrawerRequest,
   SalesReportRequest,
   PaginationParams,
+  ProductVariantSearchResponse,
 } from '@/types/api'
+
+// Product search queries for POS sales
+export const useSearchProductsForSale = (
+  companyId: number,
+  franchiseId: number | null,
+  query: string,
+  debounceMs: number = 300
+) => {
+  const [debouncedQuery, setDebouncedQuery] = useState(query)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query)
+    }, debounceMs)
+
+    return () => clearTimeout(timer)
+  }, [query, debounceMs])
+
+  return useQuery({
+    queryKey: ['pos', 'products', 'search', companyId, franchiseId, debouncedQuery],
+    queryFn: async () => {
+      if (!debouncedQuery.trim()) {
+        return { data: [] }
+      }
+      const response = await apiClient.pos.products.search(
+        companyId,
+        debouncedQuery,
+        franchiseId || undefined
+      )
+      return response
+    },
+    enabled: !!companyId && debouncedQuery.trim().length > 0,
+  })
+}
 
 // Customer queries
 export const useCustomers = (companyId: number, params?: PaginationParams) => {

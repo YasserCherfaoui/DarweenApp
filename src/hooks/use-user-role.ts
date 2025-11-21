@@ -1,5 +1,5 @@
 import { useStore } from '@tanstack/react-store'
-import { companyStore } from '@/stores/company-store'
+import { portalStore } from '@/stores/portal-store'
 import type { UserRole } from '@/types/api'
 
 export interface UseUserRoleReturn {
@@ -15,7 +15,8 @@ export interface UseUserRoleReturn {
 }
 
 export const useUserRole = (): UseUserRoleReturn => {
-  const { userRole } = useStore(companyStore)
+  const { selectedPortal } = useStore(portalStore)
+  const userRole = selectedPortal?.role || null
 
   const isOwner = userRole === 'owner'
   const isAdmin = userRole === 'admin'

@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Eye, CheckCircle, XCircle } from 'lucide-react'
+import { Eye, Plus } from 'lucide-react'
 import type { WarehouseBill } from '@/types/api'
 import { Link } from '@tanstack/react-router'
 
@@ -16,6 +16,7 @@ interface WarehouseBillTableProps {
   bills: WarehouseBill[]
   companyId?: number
   franchiseId?: number
+  onView?: (bill: WarehouseBill) => void
 }
 
 const getBillStatusColor = (status: string) => {
@@ -102,17 +103,38 @@ export function WarehouseBillTable({
               <TableCell>
                 <div className="flex gap-2">
                   {companyId && (
-                    <Link
-                      to="/companies/$companyId/warehouse-bills/$billId"
-                      params={{
-                        companyId: companyId.toString(),
-                        billId: bill.id.toString(),
-                      }}
-                    >
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
+                    <>
+                      <Link
+                        to="/companies/$companyId/warehouse-bills/$billId"
+                        params={{
+                          companyId: companyId.toString(),
+                          billId: bill.id.toString(),
+                        }}
+                      >
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                      {/* Show Create Entry Bill button for completed exit bills */}
+                      {bill.bill_type === 'exit' &&
+                        bill.status === 'completed' &&
+                        bill.franchise_id && (
+                          <Link
+                            to="/companies/$companyId/franchises/$franchiseId/warehouse-bills/entry/new"
+                            params={{
+                              companyId: companyId.toString(),
+                              franchiseId: bill.franchise_id.toString(),
+                            }}
+                            search={{
+                              exit_bill_id: bill.id,
+                            }}
+                          >
+                            <Button variant="outline" size="sm" title="Create Entry Bill">
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        )}
+                    </>
                   )}
                   {franchiseId && (
                     <Link

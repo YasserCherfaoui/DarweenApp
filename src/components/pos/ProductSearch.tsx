@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Search, Plus } from 'lucide-react'
 import type { ProductVariant, Product, ProductVariantSearchResponse } from '@/types/api'
 import { useProducts } from '@/hooks/queries/use-products'
-import { useSearchProductsForExitBill } from '@/hooks/queries/use-warehouse-bills'
+import { useSearchProductsForSale } from '@/hooks/queries/use-pos-queries'
 
 interface ProductSearchProps {
   companyId: number
@@ -19,8 +19,8 @@ export function ProductSearch({ companyId, franchiseId, onAddToCart, disabled = 
   const [filteredVariants, setFilteredVariants] = useState<Array<ProductVariant & { product?: Product }>>([])
   const [pendingEnterPress, setPendingEnterPress] = useState(false)
   
-  // Use API search when franchiseId is provided, otherwise use client-side filtering
-  const { data: searchResults, isLoading: isSearchLoading, isFetching: isSearchFetching } = useSearchProductsForExitBill(
+  // Use POS API search when franchiseId is provided, otherwise use client-side filtering
+  const { data: searchResults, isLoading: isSearchLoading, isFetching: isSearchFetching } = useSearchProductsForSale(
     companyId,
     franchiseId || null,
     searchQuery
@@ -166,9 +166,8 @@ export function ProductSearch({ companyId, franchiseId, onAddToCart, disabled = 
           {filteredVariants.map((variant) => {
             const searchResult = (variant as any)._searchResult as ProductVariantSearchResponse | undefined
             // Use effective wholesale price for exit bills, retail price otherwise
-            const price = franchiseId
-              ? (searchResult?.effective_wholesale_price || variant.wholesale_price || variant.product?.base_wholesale_price || 0)
-              : (variant.retail_price || variant.product?.base_retail_price || 0)
+            // For POS sales, always use retail price
+            const price = searchResult?.effective_retail_price || variant.retail_price || variant.product?.base_retail_price || 0
             
             const hasFranchisePricing = searchResult && (
               searchResult.franchise_retail_price !== undefined ||
@@ -194,10 +193,10 @@ export function ProductSearch({ companyId, franchiseId, onAddToCart, disabled = 
                       </div>
                       {franchiseId && searchResult && (
                         <div className="text-xs text-gray-400 mt-1">
-                          Base: ${searchResult.base_wholesale_price.toFixed(2)}
-                          {searchResult.franchise_wholesale_price && (
+                          Base: ${searchResult.base_retail_price.toFixed(2)}
+                          {searchResult.franchise_retail_price && (
                             <span className="ml-2">
-                              → ${searchResult.franchise_wholesale_price.toFixed(2)}
+                              → ${searchResult.franchise_retail_price.toFixed(2)}
                             </span>
                           )}
                         </div>

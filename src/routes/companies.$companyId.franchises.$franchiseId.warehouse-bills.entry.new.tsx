@@ -1,4 +1,4 @@
-import { createRoute, useParams, useNavigate } from '@tanstack/react-router'
+import { createRoute, useParams, useNavigate, useSearch } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
 import { Button } from '@/components/ui/button'
@@ -24,14 +24,13 @@ import {
 } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { useCreateEntryBill, useWarehouseBill } from '@/hooks/queries/use-warehouse-bills'
+import { useCreateEntryBill, useWarehouseBill, useWarehouseBills } from '@/hooks/queries/use-warehouse-bills'
 import { rootRoute } from '@/main'
 import { useFranchise } from '@/hooks/queries/use-franchises'
 import { EntryBillItemVerification } from '@/components/warehousebills/EntryBillItemVerification'
 import { DiscrepancyWarningDialog } from '@/components/warehousebills/DiscrepancyWarningDialog'
 import { AddExtraItemDialog } from '@/components/warehousebills/AddExtraItemDialog'
 import type { WarehouseBillItem, ProductVariant } from '@/types/api'
-import { useWarehouseBills } from '@/hooks/queries/use-warehouse-bills'
 
 const entryBillFormSchema = z.object({
   exit_bill_id: z.number().min(1, 'Please select an exit bill'),
@@ -40,22 +39,35 @@ const entryBillFormSchema = z.object({
 
 type EntryBillFormValues = z.infer<typeof entryBillFormSchema>
 
-export const FranchiseWarehouseBillsNewRoute = createRoute({
+export const CompanyFranchiseWarehouseBillsEntryNewRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/franchises/$franchiseId/warehouse-bills/new',
-  component: FranchiseWarehouseBillsNewPage,
+  path: '/companies/$companyId/franchises/$franchiseId/warehouse-bills/entry/new',
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      exit_bill_id: search.exit_bill_id
+        ? parseInt(String(search.exit_bill_id))
+        : undefined,
+    }
+  },
+  component: CompanyFranchiseWarehouseBillsEntryNewPage,
 })
 
-function FranchiseWarehouseBillsNewPage() {
-  const { franchiseId } = useParams({
-    from: '/franchises/$franchiseId/warehouse-bills/new',
+function CompanyFranchiseWarehouseBillsEntryNewPage() {
+  const { companyId, franchiseId } = useParams({
+    from: '/companies/$companyId/franchises/$franchiseId/warehouse-bills/entry/new',
   })
+  const search = useSearch({
+    from: '/companies/$companyId/franchises/$franchiseId/warehouse-bills/entry/new',
+  })
+  const companyIdNum = parseInt(companyId)
   const franchiseIdNum = parseInt(franchiseId)
   const navigate = useNavigate()
   const createBill = useCreateEntryBill()
 
   // State for item verification
-  const [selectedExitBillId, setSelectedExitBillId] = useState<number | null>(null)
+  const [selectedExitBillId, setSelectedExitBillId] = useState<number | null>(
+    search.exit_bill_id || null
+  )
   const [receivedItems, setReceivedItems] = useState<Map<number, number>>(new Map())
   const [extraItems, setExtraItems] = useState<
     Array<{ product_variant_id: number; variant?: ProductVariant }>
@@ -63,17 +75,17 @@ function FranchiseWarehouseBillsNewPage() {
   const [showAddExtraDialog, setShowAddExtraDialog] = useState(false)
   const [showWarningDialog, setShowWarningDialog] = useState(false)
 
-  // Get franchise to find parent company
+  // Get franchise to verify it exists
   const { data: franchise } = useFranchise(franchiseIdNum)
 
   // Get completed exit bills for this franchise
-  const { data: exitBillsData } = useWarehouseBills(
-    franchise?.parent_company_id || 0,
-    {
-      page: 1,
-      limit: 100,
-    }
-  )
+  const { data: exitBillsData } = useWarehouseBills(companyIdNum, {
+    page: 1,
+    limit: 100,
+    franchise_id: franchiseIdNum,
+    bill_type: 'exit',
+    status: 'completed',
+  })
 
   const exitBills =
     exitBillsData?.data.filter(
@@ -85,13 +97,14 @@ function FranchiseWarehouseBillsNewPage() {
 
   // Get selected exit bill details
   const { data: exitBill } = useWarehouseBill(
-    franchise?.parent_company_id || 0,
+    companyIdNum,
     selectedExitBillId || 0
   )
 
   const form = useForm<EntryBillFormValues>({
     resolver: zodResolver(entryBillFormSchema),
     defaultValues: {
+      exit_bill_id: search.exit_bill_id || undefined,
       notes: '',
     },
   })
@@ -224,7 +237,7 @@ function FranchiseWarehouseBillsNewPage() {
         items,
       },
     })
-    navigate({ to: `/franchises/${franchiseId}/warehouse-bills` })
+    navigate({ to: `/companies/${companyId}/franchises/${franchiseId}` })
   }
 
   const handleConfirmSubmit = async (values: EntryBillFormValues) => {
@@ -261,8 +274,9 @@ function FranchiseWarehouseBillsNewPage() {
         items,
       },
     })
-    navigate({ to: `/franchises/${franchiseId}/warehouse-bills` })
+    navigate({ to: `/companies/${companyId}/franchises/${franchiseId}` })
   }
+
 
   const existingVariantIds = [
     ...(exitBill?.items?.map((item) => item.product_variant_id) || []),
@@ -274,11 +288,11 @@ function FranchiseWarehouseBillsNewPage() {
       <div className="space-y-6">
         <Button
           variant="ghost"
-          onClick={() => navigate({ to: `/franchises/${franchiseId}/warehouse-bills` })}
+          onClick={() => navigate({ to: `/companies/${companyId}/franchises/${franchiseId}` })}
           className="mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Warehouse Bills
+          Back to Franchise
         </Button>
 
         <div>
@@ -286,7 +300,8 @@ function FranchiseWarehouseBillsNewPage() {
             Create Entry Bill
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-2">
-            Verify items one-by-one before creating entry bill linked to a completed exit bill
+            Verify items one-by-one before creating entry bill for{' '}
+            {franchise?.name || 'franchise'}
           </p>
         </div>
 
@@ -327,7 +342,7 @@ function FranchiseWarehouseBillsNewPage() {
                         <SelectContent>
                           {exitBills.length === 0 ? (
                             <SelectItem value="none" disabled>
-                              No completed exit bills available
+                              No completed exit bills available for this franchise
                             </SelectItem>
                           ) : (
                             exitBills.map((bill) => (
@@ -484,15 +499,13 @@ function FranchiseWarehouseBillsNewPage() {
         )}
 
         {/* Add Extra Item Dialog */}
-        {franchise?.parent_company_id && (
-          <AddExtraItemDialog
-            open={showAddExtraDialog}
-            onOpenChange={setShowAddExtraDialog}
-            companyId={franchise.parent_company_id}
-            onAddItem={handleAddExtraItem}
-            existingVariantIds={existingVariantIds}
-          />
-        )}
+        <AddExtraItemDialog
+          open={showAddExtraDialog}
+          onOpenChange={setShowAddExtraDialog}
+          companyId={companyIdNum}
+          onAddItem={handleAddExtraItem}
+          existingVariantIds={existingVariantIds}
+        />
       </div>
     </RoleBasedLayout>
   )

@@ -9,21 +9,20 @@ import { InventoryTable } from '@/components/inventory/InventoryTable'
 import { StockAdjustmentDialog } from '@/components/inventory/StockAdjustmentDialog'
 import { StockReservationDialog } from '@/components/inventory/StockReservationDialog'
 import { InventoryMovementsDialog } from '@/components/inventory/InventoryMovementsDialog'
-import { CreateInventoryDialog } from '@/components/inventory/CreateInventoryDialog'
 import { useFranchiseInventory } from '@/hooks/queries/use-inventory'
-import { ArrowLeft, Plus, Search, Package, AlertTriangle, Lock } from 'lucide-react'
+import { ArrowLeft, Search, Package, AlertTriangle, Lock } from 'lucide-react'
 import { rootRoute } from '@/main'
 import type { Inventory } from '@/types/api'
 
 export const FranchiseInventoryRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/companies/$companyId/franchises/$franchiseId/inventory',
+  path: '/franchises/$franchiseId/inventory',
   component: FranchiseInventoryPage,
 })
 
 function FranchiseInventoryPage() {
   const navigate = useNavigate()
-  const { companyId, franchiseId } = FranchiseInventoryRoute.useParams()
+  const { franchiseId } = FranchiseInventoryRoute.useParams()
   const franchiseIdNum = Number(franchiseId)
 
   const { data: inventory, isLoading: inventoryLoading } = useFranchiseInventory(franchiseIdNum)
@@ -33,7 +32,6 @@ function FranchiseInventoryPage() {
   const [adjustDialogOpen, setAdjustDialogOpen] = useState(false)
   const [reserveDialogOpen, setReserveDialogOpen] = useState(false)
   const [movementsDialogOpen, setMovementsDialogOpen] = useState(false)
-  const [createDialogOpen, setCreateDialogOpen] = useState(false)
 
   const inventoryItems = inventory || []
   const franchiseName = inventoryItems[0]?.franchise_name || 'Franchise'
@@ -93,7 +91,7 @@ function FranchiseInventoryPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate({ to: `/companies/${companyId}/franchises/${franchiseId}` })}>
+            <Button variant="ghost" onClick={() => navigate({ to: '/' })}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
@@ -104,10 +102,6 @@ function FranchiseInventoryPage() {
               <p className="text-gray-500 dark:text-gray-400 mt-1">{franchiseName}</p>
             </div>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Inventory
-          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -225,12 +219,6 @@ function FranchiseInventoryPage() {
         inventory={selectedInventory}
         open={movementsDialogOpen}
         onOpenChange={setMovementsDialogOpen}
-      />
-      <CreateInventoryDialog
-        companyId={inventoryItems[0]?.company_id || 0}
-        franchiseId={franchiseIdNum}
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
       />
     </RoleBasedLayout>
   )
