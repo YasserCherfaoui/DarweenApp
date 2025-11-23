@@ -100,3 +100,4 @@ export function FranchisePricingTable({ pricing, onEdit, onDelete }: FranchisePr
 
 
 
+
