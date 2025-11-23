@@ -43,12 +43,14 @@ export interface UserWithRole extends User {
 export interface LoginRequest {
   email: string
   password: string
+  recaptcha_token?: string
 }
 
 export interface RegisterRequest {
   email: string
   password: string
   first_name: string
+  recaptcha_token?: string
   last_name: string
 }
 

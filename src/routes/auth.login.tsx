@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/use-auth'
+import { useRecaptcha } from '@/hooks/use-recaptcha'
 import { rootRoute } from '@/main'
 import { useForm } from '@tanstack/react-form'
 import { Link, createRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { executeRecaptcha } from '@/lib/recaptcha'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -22,13 +24,29 @@ export const LoginRoute = createRoute({
 function LoginPage() {
   const { login, isLoggingIn } = useAuth()
 
+  // Load reCAPTCHA on mount, cleanup on unmount (auth page only)
+  useRecaptcha()
+
   const form = useForm({
     defaultValues: {
       email: '',
       password: '',
     },
     onSubmit: async ({ value }) => {
-      await login(value)
+      try {
+        // Execute reCAPTCHA v3 before submitting
+        const recaptchaToken = await executeRecaptcha('login')
+        
+        // Include reCAPTCHA token in login request
+        await login({
+          ...value,
+          recaptcha_token: recaptchaToken || undefined,
+        })
+      } catch (error) {
+        console.error('reCAPTCHA error:', error)
+        // Still attempt login even if reCAPTCHA fails (backend will handle it)
+        await login(value)
+      }
     },
   })
 

@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/use-auth'
+import { useRecaptcha } from '@/hooks/use-recaptcha'
 import { rootRoute } from '@/main'
 import { useForm } from '@tanstack/react-form'
 import { Link, createRoute } from '@tanstack/react-router'
 import { z } from 'zod'
+import { executeRecaptcha } from '@/lib/recaptcha'
 
 const registerSchema = z.object({
   first_name: z.string().min(2, 'First name must be at least 2 characters'),
@@ -24,6 +26,9 @@ export const RegisterRoute = createRoute({
 function RegisterPage() {
   const { register, isRegistering } = useAuth()
 
+  // Load reCAPTCHA on mount, cleanup on unmount (auth page only)
+  useRecaptcha()
+
   const form = useForm({
     defaultValues: {
       first_name: '',
@@ -32,7 +37,20 @@ function RegisterPage() {
       password: '',
     },
     onSubmit: async ({ value }) => {
-      await register(value)
+      try {
+        // Execute reCAPTCHA v3 before submitting
+        const recaptchaToken = await executeRecaptcha('register')
+        
+        // Include reCAPTCHA token in register request
+        await register({
+          ...value,
+          recaptcha_token: recaptchaToken || undefined,
+        })
+      } catch (error) {
+        console.error('reCAPTCHA error:', error)
+        // Still attempt registration even if reCAPTCHA fails (backend will handle it)
+        await register(value)
+      }
     },
   })
 

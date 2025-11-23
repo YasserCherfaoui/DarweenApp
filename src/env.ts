@@ -15,6 +15,7 @@ export const env = createEnv({
   client: {
     VITE_APP_TITLE: z.string().min(1).optional(),
     VITE_API_URL: z.string().url().default('http://localhost:8080/api/v1'),
+    VITE_RECAPTCHA_SITE_KEY: z.string().min(1).optional(),
   },
 
   /**
