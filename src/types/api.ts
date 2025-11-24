@@ -26,6 +26,240 @@ export interface PaginatedResponse<T> {
 // User types
 export type UserRole = 'owner' | 'admin' | 'manager' | 'employee'
 
+// Permission types
+export type Permission =
+  // Company Management
+  | 'companies.create'
+  | 'companies.update'
+  | 'companies.delete'
+  | 'companies.view'
+  | 'companies.manage_users'
+  // Product Management
+  | 'products.create'
+  | 'products.update'
+  | 'products.delete'
+  | 'products.view'
+  // Inventory
+  | 'inventory.read'
+  | 'inventory.write'
+  | 'inventory.adjust'
+  // POS
+  | 'pos.sales.create'
+  | 'pos.sales.view'
+  | 'pos.refund'
+  | 'pos.cash_drawer'
+  | 'pos.customers'
+  | 'pos.reports'
+  // Suppliers
+  | 'suppliers.create'
+  | 'suppliers.update'
+  | 'suppliers.delete'
+  | 'suppliers.view'
+  // Franchises
+  | 'franchises.create'
+  | 'franchises.update'
+  | 'franchises.delete'
+  | 'franchises.view'
+  | 'franchises.manage_users'
+  // Warehouse Bills
+  | 'warehouse_bills.create'
+  | 'warehouse_bills.update'
+  | 'warehouse_bills.delete'
+  | 'warehouse_bills.view'
+  | 'warehouse_bills.complete'
+  // Settings
+  | 'settings.view'
+  | 'settings.update'
+  | 'settings.subscription'
+  | 'settings.smtp'
+  // Email
+  | 'emails.send'
+  // Subscription
+  | 'subscription.view'
+  | 'subscription.update'
+  // Users
+  | 'users.view'
+  | 'users.update'
+
+// Permission constants
+export const PERMISSIONS = {
+  // Company Management
+  COMPANY_CREATE: 'companies.create' as Permission,
+  COMPANY_UPDATE: 'companies.update' as Permission,
+  COMPANY_DELETE: 'companies.delete' as Permission,
+  COMPANY_VIEW: 'companies.view' as Permission,
+  COMPANY_MANAGE_USERS: 'companies.manage_users' as Permission,
+  // Product Management
+  PRODUCT_CREATE: 'products.create' as Permission,
+  PRODUCT_UPDATE: 'products.update' as Permission,
+  PRODUCT_DELETE: 'products.delete' as Permission,
+  PRODUCT_VIEW: 'products.view' as Permission,
+  // Inventory
+  INVENTORY_READ: 'inventory.read' as Permission,
+  INVENTORY_WRITE: 'inventory.write' as Permission,
+  INVENTORY_ADJUST: 'inventory.adjust' as Permission,
+  // POS
+  POS_SALES_CREATE: 'pos.sales.create' as Permission,
+  POS_SALES_VIEW: 'pos.sales.view' as Permission,
+  POS_REFUND: 'pos.refund' as Permission,
+  POS_CASH_DRAWER: 'pos.cash_drawer' as Permission,
+  POS_CUSTOMERS: 'pos.customers' as Permission,
+  POS_REPORTS: 'pos.reports' as Permission,
+  // Suppliers
+  SUPPLIER_CREATE: 'suppliers.create' as Permission,
+  SUPPLIER_UPDATE: 'suppliers.update' as Permission,
+  SUPPLIER_DELETE: 'suppliers.delete' as Permission,
+  SUPPLIER_VIEW: 'suppliers.view' as Permission,
+  // Franchises
+  FRANCHISE_CREATE: 'franchises.create' as Permission,
+  FRANCHISE_UPDATE: 'franchises.update' as Permission,
+  FRANCHISE_DELETE: 'franchises.delete' as Permission,
+  FRANCHISE_VIEW: 'franchises.view' as Permission,
+  FRANCHISE_MANAGE_USERS: 'franchises.manage_users' as Permission,
+  // Warehouse Bills
+  WAREHOUSE_BILL_CREATE: 'warehouse_bills.create' as Permission,
+  WAREHOUSE_BILL_UPDATE: 'warehouse_bills.update' as Permission,
+  WAREHOUSE_BILL_DELETE: 'warehouse_bills.delete' as Permission,
+  WAREHOUSE_BILL_VIEW: 'warehouse_bills.view' as Permission,
+  WAREHOUSE_BILL_COMPLETE: 'warehouse_bills.complete' as Permission,
+  // Settings
+  SETTINGS_VIEW: 'settings.view' as Permission,
+  SETTINGS_UPDATE: 'settings.update' as Permission,
+  SETTINGS_SUBSCRIPTION: 'settings.subscription' as Permission,
+  SETTINGS_SMTP: 'settings.smtp' as Permission,
+  // Email
+  EMAIL_SEND: 'emails.send' as Permission,
+  // Subscription
+  SUBSCRIPTION_VIEW: 'subscription.view' as Permission,
+  SUBSCRIPTION_UPDATE: 'subscription.update' as Permission,
+  // Users
+  USERS_VIEW: 'users.view' as Permission,
+  USERS_UPDATE: 'users.update' as Permission,
+} as const
+
+// Role-Permission mapping
+export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
+  owner: [
+    PERMISSIONS.COMPANY_CREATE,
+    PERMISSIONS.COMPANY_UPDATE,
+    PERMISSIONS.COMPANY_DELETE,
+    PERMISSIONS.COMPANY_VIEW,
+    PERMISSIONS.COMPANY_MANAGE_USERS,
+    PERMISSIONS.PRODUCT_CREATE,
+    PERMISSIONS.PRODUCT_UPDATE,
+    PERMISSIONS.PRODUCT_DELETE,
+    PERMISSIONS.PRODUCT_VIEW,
+    PERMISSIONS.INVENTORY_READ,
+    PERMISSIONS.INVENTORY_WRITE,
+    PERMISSIONS.INVENTORY_ADJUST,
+    PERMISSIONS.POS_SALES_CREATE,
+    PERMISSIONS.POS_SALES_VIEW,
+    PERMISSIONS.POS_REFUND,
+    PERMISSIONS.POS_CASH_DRAWER,
+    PERMISSIONS.POS_CUSTOMERS,
+    PERMISSIONS.POS_REPORTS,
+    PERMISSIONS.SUPPLIER_CREATE,
+    PERMISSIONS.SUPPLIER_UPDATE,
+    PERMISSIONS.SUPPLIER_DELETE,
+    PERMISSIONS.SUPPLIER_VIEW,
+    PERMISSIONS.FRANCHISE_CREATE,
+    PERMISSIONS.FRANCHISE_UPDATE,
+    PERMISSIONS.FRANCHISE_DELETE,
+    PERMISSIONS.FRANCHISE_VIEW,
+    PERMISSIONS.FRANCHISE_MANAGE_USERS,
+    PERMISSIONS.WAREHOUSE_BILL_CREATE,
+    PERMISSIONS.WAREHOUSE_BILL_UPDATE,
+    PERMISSIONS.WAREHOUSE_BILL_DELETE,
+    PERMISSIONS.WAREHOUSE_BILL_VIEW,
+    PERMISSIONS.WAREHOUSE_BILL_COMPLETE,
+    PERMISSIONS.SETTINGS_VIEW,
+    PERMISSIONS.SETTINGS_UPDATE,
+    PERMISSIONS.SETTINGS_SUBSCRIPTION,
+    PERMISSIONS.SETTINGS_SMTP,
+    PERMISSIONS.EMAIL_SEND,
+    PERMISSIONS.SUBSCRIPTION_VIEW,
+    PERMISSIONS.SUBSCRIPTION_UPDATE,
+    PERMISSIONS.USERS_VIEW,
+    PERMISSIONS.USERS_UPDATE,
+  ],
+  admin: [
+    PERMISSIONS.COMPANY_CREATE,
+    PERMISSIONS.COMPANY_UPDATE,
+    PERMISSIONS.COMPANY_DELETE,
+    PERMISSIONS.COMPANY_VIEW,
+    PERMISSIONS.COMPANY_MANAGE_USERS,
+    PERMISSIONS.PRODUCT_CREATE,
+    PERMISSIONS.PRODUCT_UPDATE,
+    PERMISSIONS.PRODUCT_DELETE,
+    PERMISSIONS.PRODUCT_VIEW,
+    PERMISSIONS.INVENTORY_READ,
+    PERMISSIONS.INVENTORY_WRITE,
+    PERMISSIONS.INVENTORY_ADJUST,
+    PERMISSIONS.POS_SALES_CREATE,
+    PERMISSIONS.POS_SALES_VIEW,
+    PERMISSIONS.POS_REFUND,
+    PERMISSIONS.POS_CASH_DRAWER,
+    PERMISSIONS.POS_CUSTOMERS,
+    PERMISSIONS.POS_REPORTS,
+    PERMISSIONS.SUPPLIER_CREATE,
+    PERMISSIONS.SUPPLIER_UPDATE,
+    PERMISSIONS.SUPPLIER_DELETE,
+    PERMISSIONS.SUPPLIER_VIEW,
+    PERMISSIONS.FRANCHISE_CREATE,
+    PERMISSIONS.FRANCHISE_UPDATE,
+    PERMISSIONS.FRANCHISE_DELETE,
+    PERMISSIONS.FRANCHISE_VIEW,
+    PERMISSIONS.FRANCHISE_MANAGE_USERS,
+    PERMISSIONS.WAREHOUSE_BILL_CREATE,
+    PERMISSIONS.WAREHOUSE_BILL_UPDATE,
+    PERMISSIONS.WAREHOUSE_BILL_DELETE,
+    PERMISSIONS.WAREHOUSE_BILL_VIEW,
+    PERMISSIONS.WAREHOUSE_BILL_COMPLETE,
+    PERMISSIONS.SETTINGS_VIEW,
+    PERMISSIONS.SETTINGS_UPDATE,
+    PERMISSIONS.SETTINGS_SMTP,
+    PERMISSIONS.EMAIL_SEND,
+    PERMISSIONS.SUBSCRIPTION_VIEW, // Can view but not update
+    PERMISSIONS.USERS_VIEW,
+    PERMISSIONS.USERS_UPDATE,
+  ],
+  manager: [
+    PERMISSIONS.COMPANY_VIEW,
+    PERMISSIONS.PRODUCT_CREATE,
+    PERMISSIONS.PRODUCT_UPDATE,
+    PERMISSIONS.PRODUCT_VIEW,
+    PERMISSIONS.INVENTORY_READ,
+    PERMISSIONS.INVENTORY_WRITE,
+    PERMISSIONS.INVENTORY_ADJUST,
+    PERMISSIONS.POS_SALES_CREATE,
+    PERMISSIONS.POS_SALES_VIEW,
+    PERMISSIONS.POS_REFUND,
+    PERMISSIONS.POS_CASH_DRAWER,
+    PERMISSIONS.POS_CUSTOMERS,
+    PERMISSIONS.POS_REPORTS,
+    PERMISSIONS.SUPPLIER_CREATE,
+    PERMISSIONS.SUPPLIER_UPDATE,
+    PERMISSIONS.SUPPLIER_VIEW,
+    PERMISSIONS.FRANCHISE_VIEW,
+    PERMISSIONS.WAREHOUSE_BILL_CREATE,
+    PERMISSIONS.WAREHOUSE_BILL_UPDATE,
+    PERMISSIONS.WAREHOUSE_BILL_VIEW,
+    PERMISSIONS.WAREHOUSE_BILL_COMPLETE,
+    PERMISSIONS.SETTINGS_VIEW,
+    PERMISSIONS.EMAIL_SEND,
+    PERMISSIONS.USERS_VIEW,
+  ],
+  employee: [
+    PERMISSIONS.POS_SALES_CREATE,
+    PERMISSIONS.POS_SALES_VIEW,
+    PERMISSIONS.POS_REFUND,
+    PERMISSIONS.POS_CASH_DRAWER,
+    PERMISSIONS.POS_CUSTOMERS,
+    PERMISSIONS.PRODUCT_VIEW,
+    PERMISSIONS.INVENTORY_READ,
+  ],
+} as const
+
 export interface User {
   id: number
   email: string
@@ -232,6 +466,65 @@ export interface SMTPConfigResponse {
 
 export interface SMTPConfigListResponse {
 	configs: SMTPConfigResponse[]
+}
+
+// Yalidine Config types
+export interface YalidineConfig {
+	id: number
+	company_id: number
+	api_id: string
+	is_active: boolean
+	is_default: boolean
+	created_at: string
+	updated_at: string
+}
+
+export interface CreateYalidineConfigRequest {
+	api_id: string
+	api_token: string
+	is_active?: boolean
+}
+
+export interface UpdateYalidineConfigRequest {
+	api_id?: string
+	api_token?: string
+	is_active?: boolean
+}
+
+export interface YalidineConfigResponse {
+	id: number
+	company_id: number
+	api_id: string
+	is_active: boolean
+	is_default: boolean
+	created_at: string
+	updated_at: string
+}
+
+export interface YalidineConfigListResponse {
+	configs: YalidineConfigResponse[]
+}
+
+// Yalidine API response types for testing
+export interface YalidineCenter {
+	center_id: number
+	name: string
+	address: string
+	gps: string
+	commune_id: number
+	commune_name: string
+	wilaya_id: number
+	wilaya_name: string
+}
+
+export interface YalidineCentersResponse {
+	data: YalidineCenter[]
+	has_more: boolean
+	total_data: number
+	links: {
+		self: string
+		next?: string
+	}
 }
 
 // Subscription types

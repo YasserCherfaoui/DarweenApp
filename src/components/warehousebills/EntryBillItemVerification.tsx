@@ -58,7 +58,7 @@ export function EntryBillItemVerification({
       {/* Exit Bill Items */}
       {exitBillItems.map((item) => {
         const received = receivedItems.get(item.product_variant_id) || 0
-        const expected = item.expected_quantity
+        const expected = item.quantity
         const difference = received - expected
         const discrepancy = getDiscrepancyInfo(item.product_variant_id, expected)
 
@@ -69,13 +69,15 @@ export function EntryBillItemVerification({
           >
             <div>
               <div className="font-medium">
-                {item.variant_name ||
-                  item.product_name ||
-                  `Variant #${item.product_variant_id}`}
+                {item.product_name && item.variant_name
+                  ? `${item.product_name} - ${item.variant_name}`
+                  : item.variant_name ||
+                    item.product_name ||
+                    `Variant #${item.product_variant_id}`}
               </div>
               {item.variant_sku && (
-                <div className="text-sm text-gray-500">
-                  SKU: {item.variant_sku}
+                <div className="text-sm font-bold">
+                  {item.variant_sku}
                 </div>
               )}
             </div>

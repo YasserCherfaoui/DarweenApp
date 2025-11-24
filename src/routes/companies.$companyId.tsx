@@ -14,6 +14,8 @@ import { UpdateRoleDialog } from '@/components/companies/UpdateRoleDialog'
 import { CredentialsDialog } from '@/components/companies/CredentialsDialog'
 import { SMTPConfigList } from '@/components/companies/SMTPConfigList'
 import { SMTPConfigDialog } from '@/components/companies/SMTPConfigDialog'
+import { YalidineConfigList } from '@/components/companies/YalidineConfigList'
+import { YalidineConfigDialog } from '@/components/companies/YalidineConfigDialog'
 import { EmailComposerDialog } from '@/components/emails/EmailComposerDialog'
 import { 
   useCompany, 
@@ -27,14 +29,19 @@ import {
   useSMTPConfigs,
   useCreateSMTPConfig,
 } from '@/hooks/queries/use-smtp-configs'
+import {
+  useYalidineConfigs,
+  useCreateYalidineConfig,
+  useTestYalidineConnection,
+} from '@/hooks/queries/use-yalidine-configs'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import { useSelectedCompany } from '@/hooks/use-selected-company'
 import { useAuth } from '@/hooks/use-auth'
-import { ArrowLeft, Edit, Users, Package, Truck, Warehouse, Store, Mail, Plus } from 'lucide-react'
+import { ArrowLeft, Edit, Users, Package, Truck, Warehouse, Store, Mail, Plus, TestTube } from 'lucide-react'
 import { rootRoute } from '@/main'
-import type { UserWithRole, SMTPConfigResponse, CreateSMTPConfigRequest, UpdateSMTPConfigRequest, SMTPSecurityType } from '@/types/api'
+import type { UserWithRole, SMTPConfigResponse, CreateSMTPConfigRequest, UpdateSMTPConfigRequest, SMTPSecurityType, YalidineConfigResponse, CreateYalidineConfigRequest, UpdateYalidineConfigRequest } from '@/types/api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -83,6 +90,16 @@ function CompanyDetailsPage() {
   const [smtpConfigToDelete, setSmtpConfigToDelete] = useState<SMTPConfigResponse | null>(null)
   const [deleteSMTPConfigDialogOpen, setDeleteSMTPConfigDialogOpen] = useState(false)
   const [emailComposerOpen, setEmailComposerOpen] = useState(false)
+
+  // Yalidine Config state
+  const { data: yalidineConfigs, isLoading: yalidineConfigsLoading } = useYalidineConfigs(companyIdNum)
+  const createYalidineConfig = useCreateYalidineConfig(companyIdNum)
+  
+  const [yalidineConfigDialogOpen, setYalidineConfigDialogOpen] = useState(false)
+  const [yalidineConfigToEdit, setYalidineConfigToEdit] = useState<YalidineConfigResponse | null>(null)
+  const [yalidineConfigToDelete, setYalidineConfigToDelete] = useState<YalidineConfigResponse | null>(null)
+  const [deleteYalidineConfigDialogOpen, setDeleteYalidineConfigDialogOpen] = useState(false)
+  const testYalidineConnection = useTestYalidineConnection(companyIdNum)
 
   // Sync the selected company with the URL param
   useEffect(() => {
@@ -223,6 +240,89 @@ function CompanyDetailsPage() {
       toast.success('Default SMTP config set successfully')
     } catch (error: any) {
       toast.error(error.message || 'Failed to set default SMTP config')
+    }
+  }
+
+  // Yalidine Config handlers
+  const handleCreateYalidineConfig = () => {
+    setYalidineConfigToEdit(null)
+    setYalidineConfigDialogOpen(true)
+  }
+
+  const handleEditYalidineConfig = (config: YalidineConfigResponse) => {
+    setYalidineConfigToEdit(config)
+    setYalidineConfigDialogOpen(true)
+  }
+
+  const handleSubmitYalidineConfig = async (data: {
+    api_id: string
+    api_token?: string
+    is_active?: boolean
+  }) => {
+    try {
+      if (yalidineConfigToEdit) {
+        // Update existing config
+        const updateData: UpdateYalidineConfigRequest = {
+          api_id: data.api_id,
+          is_active: data.is_active,
+        }
+        if (data.api_token) {
+          updateData.api_token = data.api_token
+        }
+        await apiClient.yalidineConfigs.update(companyIdNum, yalidineConfigToEdit.id, updateData)
+        queryClient.invalidateQueries({ queryKey: ['companies', companyIdNum, 'yalidine-configs'] })
+        toast.success('Yalidine config updated successfully')
+        setYalidineConfigDialogOpen(false)
+        setYalidineConfigToEdit(null)
+      } else {
+        // Create new config
+        const createData: CreateYalidineConfigRequest = {
+          api_id: data.api_id,
+          api_token: data.api_token || '',
+          is_active: data.is_active,
+        }
+        await createYalidineConfig.mutateAsync(createData)
+        setYalidineConfigDialogOpen(false)
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save Yalidine config')
+    }
+  }
+
+  const handleDeleteYalidineConfig = (config: YalidineConfigResponse) => {
+    setYalidineConfigToDelete(config)
+    setDeleteYalidineConfigDialogOpen(true)
+  }
+
+  const confirmDeleteYalidineConfig = async () => {
+    if (yalidineConfigToDelete) {
+      try {
+        await apiClient.yalidineConfigs.delete(companyIdNum, yalidineConfigToDelete.id)
+        queryClient.invalidateQueries({ queryKey: ['companies', companyIdNum, 'yalidine-configs'] })
+        toast.success('Yalidine config deleted successfully')
+        setDeleteYalidineConfigDialogOpen(false)
+        setYalidineConfigToDelete(null)
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to delete Yalidine config')
+      }
+    }
+  }
+
+  const handleSetDefaultYalidineConfig = async (config: YalidineConfigResponse) => {
+    try {
+      await apiClient.yalidineConfigs.setDefault(companyIdNum, config.id)
+      queryClient.invalidateQueries({ queryKey: ['companies', companyIdNum, 'yalidine-configs'] })
+      toast.success('Default Yalidine config set successfully')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to set default Yalidine config')
+    }
+  }
+
+  const handleTestYalidineConnection = async () => {
+    try {
+      await testYalidineConnection.mutateAsync()
+    } catch (error: any) {
+      // Error is handled by the mutation hook
     }
   }
 
@@ -413,6 +513,7 @@ function CompanyDetailsPage() {
           <TabsList>
             <TabsTrigger value="users">User Management</TabsTrigger>
             <TabsTrigger value="smtp">SMTP Config</TabsTrigger>
+            <TabsTrigger value="yalidine">Yalidine</TabsTrigger>
             <TabsTrigger value="emails">Send Email</TabsTrigger>
           </TabsList>
 
@@ -479,6 +580,51 @@ function CompanyDetailsPage() {
                     onEdit={handleEditSMTPConfig}
                     onDelete={handleDeleteSMTPConfig}
                     onSetDefault={handleSetDefaultSMTPConfig}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="yalidine" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Yalidine API Configurations</CardTitle>
+                    <CardDescription>
+                      Manage Yalidine API credentials for shipping management. Each company can have multiple Yalidine configs.
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={handleTestYalidineConnection}
+                      disabled={testYalidineConnection.isPending}
+                    >
+                      <TestTube className="mr-2 h-4 w-4" />
+                      {testYalidineConnection.isPending ? 'Testing...' : 'Test Connection'}
+                    </Button>
+                    <Button onClick={handleCreateYalidineConfig}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Yalidine Config
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {yalidineConfigsLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : (
+                  <YalidineConfigList
+                    configs={yalidineConfigs || []}
+                    onEdit={handleEditYalidineConfig}
+                    onDelete={handleDeleteYalidineConfig}
+                    onSetDefault={handleSetDefaultYalidineConfig}
                   />
                 )}
               </CardContent>
@@ -586,6 +732,36 @@ function CompanyDetailsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDeleteSMTPConfig}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Yalidine Config Dialogs */}
+      <YalidineConfigDialog
+        open={yalidineConfigDialogOpen}
+        onOpenChange={(open) => {
+          setYalidineConfigDialogOpen(open)
+          if (!open) setYalidineConfigToEdit(null)
+        }}
+        initialData={yalidineConfigToEdit || undefined}
+        onSubmit={handleSubmitYalidineConfig}
+        isLoading={createYalidineConfig.isPending}
+      />
+
+      <AlertDialog open={deleteYalidineConfigDialogOpen} onOpenChange={setDeleteYalidineConfigDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Yalidine Configuration</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this Yalidine configuration?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteYalidineConfig}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

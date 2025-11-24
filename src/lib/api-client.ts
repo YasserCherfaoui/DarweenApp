@@ -1,94 +1,96 @@
 import { env } from '@/env'
 import type {
-  ApiResponse,
-  LoginRequest,
-  RegisterRequest,
-  AuthResponse,
-  ValidateInvitationResponse,
   AcceptInvitationRequest,
-  ValidateOTPResponse,
-  CompleteUserSetupRequest,
-  ChangePasswordWithOTPRequest,
-  ChangePasswordRequest,
-  Company,
-  CreateCompanyRequest,
-  UpdateCompanyRequest,
+  AddPaymentRequest,
   AddUserToCompanyRequest,
   AddUserToCompanyResponse,
-  UserWithRole,
-  Subscription,
-  UpdateSubscriptionRequest,
-  Product,
-  CreateProductRequest,
-  UpdateProductRequest,
-  PaginatedResponse,
-  PaginationParams,
-  ProductVariant,
-  CreateProductVariantRequest,
-  UpdateProductVariantRequest,
-  BulkCreateProductVariantsRequest,
-  BulkCreateProductVariantsResponse,
-  UpdateStockRequest,
-  AdjustStockRequest,
-  Franchise,
-  CreateFranchiseRequest,
-  UpdateFranchiseRequest,
-  FranchisePricing,
-  SetFranchisePricingRequest,
-  BulkSetFranchisePricingRequest,
-  BulkSetFranchisePricingResponse,
   AddUserToFranchiseRequest,
   AddUserToFranchiseResponse,
-  Inventory,
-  InventoryListResponse,
-  CreateInventoryRequest,
-  UpdateInventoryStockRequest,
   AdjustInventoryStockRequest,
-  ReserveStockRequest,
-  ReleaseStockRequest,
-  InventoryMovement,
-  InventoryMovementListResponse,
-  MovementFilterParams,
-  User,
-  Supplier,
-  CreateSupplierRequest,
-  UpdateSupplierRequest,
-  SupplierWithProducts,
-  SupplierBill,
-  SupplierBillItem,
-  CreateSupplierBillRequest,
-  UpdateSupplierBillRequest,
-  SupplierBillItemRequest,
-  SupplierPayment,
-  RecordSupplierPaymentRequest,
-  SupplierOutstandingBalance,
-  Customer,
-  CreateCustomerRequest,
-  UpdateCustomerRequest,
-  Sale,
-  CreateSaleRequest,
-  AddPaymentRequest,
-  Payment,
+  AdjustStockRequest,
+  ApiResponse,
+  AuthResponse,
+  BulkCreateProductVariantsRequest,
+  BulkCreateProductVariantsResponse,
+  BulkSetFranchisePricingRequest,
+  BulkSetFranchisePricingResponse,
   CashDrawer,
-  OpenCashDrawerRequest,
+  ChangePasswordRequest,
+  ChangePasswordWithOTPRequest,
   CloseCashDrawerRequest,
-  Refund,
+  Company,
+  CompleteUserSetupRequest,
+  CreateCompanyRequest,
+  CreateCustomerRequest,
+  CreateEntryBillRequest,
+  CreateExitBillRequest,
+  CreateFranchiseRequest,
+  CreateInventoryRequest,
+  CreateProductRequest,
+  CreateProductVariantRequest,
+  CreateSMTPConfigRequest,
+  CreateSaleRequest,
+  CreateSupplierBillRequest,
+  CreateSupplierRequest,
+  CreateYalidineConfigRequest,
+  Customer,
+  Franchise,
+  FranchisePricing,
+  Inventory,
+  InventoryMovementListResponse,
+  LoginRequest,
+  MovementFilterParams,
+  OpenCashDrawerRequest,
+  PaginatedResponse,
+  PaginationParams,
+  Payment,
   ProcessRefundRequest,
+  Product,
+  ProductVariant,
+  ProductVariantSearchResponse,
+  RecordSupplierPaymentRequest,
+  Refund,
+  RegisterRequest,
+  ReleaseStockRequest,
+  ReserveStockRequest,
+  SMTPConfigListResponse,
+  SMTPConfigResponse,
+  Sale,
   SalesReport,
   SalesReportRequest,
-  WarehouseBill,
-  CreateExitBillRequest,
-  CreateEntryBillRequest,
-  VerifyEntryBillRequest,
-  ProductVariantSearchResponse,
-  UpdateExitBillItemsRequest,
-  SMTPConfig,
-  CreateSMTPConfigRequest,
-  UpdateSMTPConfigRequest,
-  SMTPConfigResponse,
-  SMTPConfigListResponse,
   SendEmailRequest,
+  SetFranchisePricingRequest,
+  Subscription,
+  Supplier,
+  SupplierBill,
+  SupplierBillItem,
+  SupplierBillItemRequest,
+  SupplierOutstandingBalance,
+  SupplierPayment,
+  SupplierWithProducts,
+  UpdateCompanyRequest,
+  UpdateCustomerRequest,
+  UpdateExitBillItemsRequest,
+  UpdateFranchiseRequest,
+  UpdateInventoryStockRequest,
+  UpdateProductRequest,
+  UpdateProductVariantRequest,
+  UpdateSMTPConfigRequest,
+  UpdateStockRequest,
+  UpdateSubscriptionRequest,
+  UpdateSupplierBillRequest,
+  UpdateSupplierRequest,
+  UpdateYalidineConfigRequest,
+  User,
   UserPortalsResponse,
+  UserWithRole,
+  ValidateInvitationResponse,
+  ValidateOTPResponse,
+  VerifyEntryBillRequest,
+  WarehouseBill,
+  YalidineCentersResponse,
+  YalidineConfigListResponse,
+  YalidineConfigResponse
 } from '@/types/api'
 
 const API_URL = env.VITE_API_URL
@@ -126,9 +128,24 @@ class ApiClient {
         localStorage.removeItem('user')
         window.location.href = '/login'
       }
-      // Create error with full response data for proper error handling
+      
+      // Enhanced error with permission context
       const error = new Error(data.error?.message || 'An error occurred') as any
-      error.response = { data }
+      error.response = { data, status: response.status }
+      error.status = response.status
+      error.code = data.error?.code
+      
+      // Add permission context for 403 errors
+      if (response.status === 403) {
+        error.isPermissionError = true
+        error.permissionContext = {
+          message: data.error?.message || 'You don\'t have permission to perform this action',
+          code: data.error?.code || 'FORBIDDEN',
+          // Extract permission from error message if available
+          requiredPermission: extractPermissionFromMessage(data.error?.message),
+        }
+      }
+      
       throw error
     }
 
@@ -378,6 +395,83 @@ class ApiClient {
         method: 'POST',
         body: JSON.stringify(data),
       })
+    },
+  }
+
+  // Yalidine Config endpoints
+  yalidineConfigs = {
+    list: async (
+      companyId: number
+    ): Promise<ApiResponse<YalidineConfigListResponse>> => {
+      return this.request(`/companies/${companyId}/yalidine-configs`)
+    },
+
+    get: async (
+      companyId: number,
+      configId: number
+    ): Promise<ApiResponse<YalidineConfigResponse>> => {
+      return this.request(`/companies/${companyId}/yalidine-configs/${configId}`)
+    },
+
+    create: async (
+      companyId: number,
+      data: CreateYalidineConfigRequest
+    ): Promise<ApiResponse<YalidineConfigResponse>> => {
+      return this.request(`/companies/${companyId}/yalidine-configs`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+
+    update: async (
+      companyId: number,
+      configId: number,
+      data: UpdateYalidineConfigRequest
+    ): Promise<ApiResponse<YalidineConfigResponse>> => {
+      return this.request(`/companies/${companyId}/yalidine-configs/${configId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      })
+    },
+
+    delete: async (
+      companyId: number,
+      configId: number
+    ): Promise<ApiResponse<null>> => {
+      return this.request(`/companies/${companyId}/yalidine-configs/${configId}`, {
+        method: 'DELETE',
+      })
+    },
+
+    setDefault: async (
+      companyId: number,
+      configId: number
+    ): Promise<ApiResponse<null>> => {
+      return this.request(
+        `/companies/${companyId}/yalidine-configs/${configId}/default`,
+        {
+          method: 'PUT',
+        }
+      )
+    },
+  }
+
+  // Yalidine API endpoints
+  yalidine = {
+    getCenters: async (
+      companyId: number,
+      queryParams?: Record<string, string | number>
+    ): Promise<ApiResponse<YalidineCentersResponse>> => {
+      const query = new URLSearchParams()
+      if (queryParams) {
+        Object.entries(queryParams).forEach(([key, value]) => {
+          query.append(key, value.toString())
+        })
+      }
+      const queryString = query.toString()
+      return this.request(
+        `/companies/${companyId}/yalidine/centers${queryString ? `?${queryString}` : ''}`
+      )
     },
   }
 
@@ -1538,6 +1632,27 @@ class ApiClient {
       )
     },
   }
+}
+
+// Helper function to extract permission from error message
+function extractPermissionFromMessage(message?: string): string | null {
+  if (!message) return null
+  
+  // Try to extract permission patterns like "permission: companies.create" or "requires companies.create"
+  const permissionPatterns = [
+    /permission[:\s]+([a-z_]+\.[a-z_]+)/i,
+    /requires[:\s]+([a-z_]+\.[a-z_]+)/i,
+    /missing[:\s]+([a-z_]+\.[a-z_]+)/i,
+  ]
+  
+  for (const pattern of permissionPatterns) {
+    const match = message.match(pattern)
+    if (match && match[1]) {
+      return match[1]
+    }
+  }
+  
+  return null
 }
 
 export const apiClient = new ApiClient()

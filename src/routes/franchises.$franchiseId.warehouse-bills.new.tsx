@@ -101,7 +101,8 @@ function FranchiseWarehouseBillsNewPage() {
     if (exitBill?.items) {
       const initialMap = new Map<number, number>()
       exitBill.items.forEach((item) => {
-        initialMap.set(item.product_variant_id, item.expected_quantity)
+        // For exit bills, use quantity (not expected_quantity)
+        initialMap.set(item.product_variant_id, item.quantity)
       })
       setReceivedItems(initialMap)
     }
@@ -152,7 +153,8 @@ function FranchiseWarehouseBillsNewPage() {
 
     exitBill.items.forEach((item) => {
       const received = receivedItems.get(item.product_variant_id) || 0
-      const expected = item.expected_quantity
+      // For exit bills, use quantity (not expected_quantity)
+      const expected = item.quantity
 
       if (received === 0 && expected > 0) {
         missingItems.push({ item, expected })

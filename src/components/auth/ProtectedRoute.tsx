@@ -1,17 +1,21 @@
-import { ReactNode, useEffect } from 'react'
-import { useNavigate, useRouterState } from '@tanstack/react-router'
-import { useStore } from '@tanstack/react-store'
+import { usePermissions } from '@/hooks/use-permissions'
+import { useUserRole } from '@/hooks/use-user-role'
 import { authStore } from '@/stores/auth-store'
 import { companyStore } from '@/stores/company-store'
-import { useUserRole } from '@/hooks/use-user-role'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { AlertCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import type { Permission } from '@/types/api'
+import { useNavigate, useRouterState } from '@tanstack/react-router'
+import { useStore } from '@tanstack/react-store'
+import { ReactNode, useEffect } from 'react'
+import { PermissionError } from './PermissionError'
 
 interface ProtectedRouteProps {
   children: ReactNode
   requireAdminAccess?: boolean // If true, only owner/admin can access
   requireManagerAccess?: boolean // If true, owner/admin/manager can access
+  requirePermission?: Permission // Single permission required
+  requireAnyPermission?: Permission[] // User must have at least one of these permissions
+  requireAllPermissions?: Permission[] // User must have all of these permissions
+  permissionMode?: 'and' | 'or' // Mode for requireAnyPermission (default: 'or')
 }
 
 /**
@@ -41,14 +45,39 @@ const isAdminOnlyRoute = (path: string): boolean => {
 export function ProtectedRoute({ 
   children, 
   requireAdminAccess = false,
-  requireManagerAccess = false 
+  requireManagerAccess = false,
+  requirePermission,
+  requireAnyPermission,
+  requireAllPermissions,
+  permissionMode = 'or'
 }: ProtectedRouteProps) {
   const { isAuthenticated } = useStore(authStore)
   const { selectedCompanyId } = useStore(companyStore)
   const { isPOSUser, hasAdminAccess, hasManagerAccess } = useUserRole()
+  const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions()
   const navigate = useNavigate()
   const router = useRouterState()
   const currentPath = router.location.pathname
+
+  // Check permission requirements
+  const hasRequiredPermission = (): boolean => {
+    if (requirePermission) {
+      return hasPermission(requirePermission)
+    }
+    
+    if (requireAnyPermission && requireAnyPermission.length > 0) {
+      if (permissionMode === 'and') {
+        return hasAllPermissions(...requireAnyPermission)
+      }
+      return hasAnyPermission(...requireAnyPermission)
+    }
+    
+    if (requireAllPermissions && requireAllPermissions.length > 0) {
+      return hasAllPermissions(...requireAllPermissions)
+    }
+    
+    return true // No permission requirement
+  }
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -80,7 +109,17 @@ export function ProtectedRoute({
       }
       return
     }
-  }, [isAuthenticated, isPOSUser, hasAdminAccess, hasManagerAccess, currentPath, selectedCompanyId, navigate, requireAdminAccess, requireManagerAccess])
+
+    // Check permission requirements
+    if (!hasRequiredPermission()) {
+      if (selectedCompanyId) {
+        navigate({ to: '/companies/$companyId/pos', params: { companyId: selectedCompanyId.toString() } })
+      } else {
+        navigate({ to: '/companies' })
+      }
+      return
+    }
+  }, [isAuthenticated, isPOSUser, hasAdminAccess, hasManagerAccess, currentPath, selectedCompanyId, navigate, requireAdminAccess, requireManagerAccess, requirePermission, requireAnyPermission, requireAllPermissions, permissionMode, hasRequiredPermission])
 
   if (!isAuthenticated) {
     return null
@@ -89,45 +128,54 @@ export function ProtectedRoute({
   // Show access denied for users without proper permissions
   if (requireAdminAccess && !hasAdminAccess) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
-          <AlertDescription className="mt-2">
-            You don't have permission to access this page. This feature is only available to administrators.
-            <div className="mt-4">
-              <Button 
-                onClick={() => selectedCompanyId && navigate({ to: '/companies/$companyId/pos', params: { companyId: selectedCompanyId.toString() } })}
-                variant="outline"
-              >
-                Go to POS Dashboard
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      </div>
+      <PermissionError
+        requiredRole="admin"
+        title="Administrator Access Required"
+        message="This page is only available to administrators and owners."
+        onGoBack={() => {
+          if (selectedCompanyId) {
+            navigate({ to: '/companies/$companyId/pos', params: { companyId: selectedCompanyId.toString() } })
+          } else {
+            navigate({ to: '/companies' })
+          }
+        }}
+      />
     )
   }
 
   if (requireManagerAccess && !hasManagerAccess) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
-          <AlertDescription className="mt-2">
-            You don't have permission to access this page. This feature requires manager access or higher.
-            <div className="mt-4">
-              <Button 
-                onClick={() => selectedCompanyId && navigate({ to: '/companies/$companyId/pos', params: { companyId: selectedCompanyId.toString() } })}
-                variant="outline"
-              >
-                Go to POS Dashboard
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      </div>
+      <PermissionError
+        requiredRole="manager"
+        title="Manager Access Required"
+        message="This page requires manager access or higher."
+        onGoBack={() => {
+          if (selectedCompanyId) {
+            navigate({ to: '/companies/$companyId/pos', params: { companyId: selectedCompanyId.toString() } })
+          } else {
+            navigate({ to: '/companies' })
+          }
+        }}
+      />
+    )
+  }
+
+  // Check permission requirements
+  if (!hasRequiredPermission()) {
+    return (
+      <PermissionError
+        requiredPermission={requirePermission}
+        requiredPermissions={requireAnyPermission || requireAllPermissions}
+        title="Permission Required"
+        message="You don't have the required permissions to access this page."
+        onGoBack={() => {
+          if (selectedCompanyId) {
+            navigate({ to: '/companies/$companyId/pos', params: { companyId: selectedCompanyId.toString() } })
+          } else {
+            navigate({ to: '/companies' })
+          }
+        }}
+      />
     )
   }
 

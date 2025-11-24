@@ -1,15 +1,15 @@
+import { PortalSelectionScreen } from '@/components/auth/PortalSelectionScreen'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { RoleSwitcher } from '@/components/auth/RoleSwitcher'
+import { Button } from '@/components/ui/button'
+import { useUserPortals } from '@/hooks/queries/use-portals'
+import { portalStore } from '@/stores/portal-store'
+import { toggleSidebar } from '@/stores/sidebar-store'
+import { useStore } from '@tanstack/react-store'
+import { Menu } from 'lucide-react'
 import { ReactNode } from 'react'
 import { Sidebar } from './Sidebar'
 import { UserMenu } from './UserMenu'
-import { PortalSelector } from './PortalSelector'
-import { PortalSelectionScreen } from '@/components/auth/PortalSelectionScreen'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
-import { toggleSidebar } from '@/stores/sidebar-store'
-import { useStore } from '@tanstack/react-store'
-import { portalStore } from '@/stores/portal-store'
-import { useUserPortals } from '@/hooks/queries/use-portals'
-import { Menu } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 
 interface DashboardLayoutProps {
   children: ReactNode
@@ -58,9 +58,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   Darween ERP
                 </h1>
               </div>
-              <PortalSelector />
+              <RoleSwitcher />
             </div>
-            <UserMenu />
+            <div className="flex items-center gap-3">
+              <UserMenu />
+            </div>
           </header>
           <main className="flex-1 overflow-y-auto p-6">
             {children}
