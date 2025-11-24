@@ -10,9 +10,10 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { apiClient } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
-import { companyStore, setSelectedCompany } from '@/stores/company-store'
+import { setSelectedCompany } from '@/stores/company-store'
 import { portalStore, setSelectedPortal } from '@/stores/portal-store'
 import type { Portal } from '@/types/api'
+import { useNavigate } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import { Building2, Check, ChevronDown, Store } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -25,9 +26,9 @@ interface RoleSwitcherProps {
 
 export function RoleSwitcher({ className, variant = 'default' }: RoleSwitcherProps) {
   const { selectedPortal } = useStore(portalStore)
-  const { selectedCompany } = useStore(companyStore)
   const [portals, setPortals] = useState<Portal[]>([])
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchPortals = async () => {
@@ -47,24 +48,42 @@ export function RoleSwitcher({ className, variant = 'default' }: RoleSwitcherPro
     fetchPortals()
   }, [])
 
-  const handlePortalSelect = (portal: Portal) => {
+  const handlePortalSelect = async (portal: Portal) => {
+    // Update portal store first
     setSelectedPortal(portal)
     
-    // If it's a company portal, also update company store
+    // If it's a company portal, also update company store and navigate
     if (portal.type === 'company') {
-      // Fetch company details to update company store
-      apiClient.companies.get(portal.id).then((response) => {
+      try {
+        // Fetch company details to update company store
+        const response = await apiClient.companies.get(portal.id)
         if (response.success && response.data) {
           setSelectedCompany({
             ...response.data,
             user_role: portal.role,
           })
+          
+          // Navigate to the company page
+          navigate({ 
+            to: '/companies/$companyId', 
+            params: { companyId: portal.id.toString() } 
+          })
         }
-      }).catch(console.error)
+      } catch (error) {
+        console.error('Failed to fetch company details:', error)
+        // Still navigate even if fetch fails
+        navigate({ 
+          to: '/companies/$companyId', 
+          params: { companyId: portal.id.toString() } 
+        })
+      }
+    } else if (portal.type === 'franchise') {
+      // For franchises, navigate to franchise POS page (main franchise page)
+      navigate({ 
+        to: '/franchises/$franchiseId/pos', 
+        params: { franchiseId: portal.id.toString() } 
+      })
     }
-    
-    // Reload page to refresh context
-    window.location.reload()
   }
 
   if (loading) {
@@ -108,10 +127,11 @@ export function RoleSwitcher({ className, variant = 'default' }: RoleSwitcherPro
         <Button
           variant="outline"
           className={cn(
-            'flex items-center gap-2',
+            'flex items-center gap-2 hover:bg-accent transition-colors',
             variant === 'compact' && 'h-8 px-2 text-xs',
             className
           )}
+          title={`Switch between ${portals.length} available portals`}
         >
           {currentPortal.type === 'company' ? (
             <Building2 className="h-4 w-4" />
@@ -129,11 +149,13 @@ export function RoleSwitcher({ className, variant = 'default' }: RoleSwitcherPro
             )}
           </div>
           <RoleBadge variant="compact" showIcon={false} />
-          <ChevronDown className="h-3 w-3 opacity-50" />
+          <ChevronDown className="h-4 w-4 opacity-70" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>Switch Context</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-sm font-semibold">
+          Switch Portal ({portals.length} available)
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
         
         {/* Company Portals */}
