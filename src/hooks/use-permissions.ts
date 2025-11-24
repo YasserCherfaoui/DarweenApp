@@ -1,7 +1,7 @@
+import type { Permission } from '@/types/api'
+import { ROLE_PERMISSIONS } from '@/types/api'
 import { useMemo } from 'react'
 import { useUserRole } from './use-user-role'
-import type { Permission, UserRole } from '@/types/api'
-import { ROLE_PERMISSIONS } from '@/types/api'
 
 export interface UsePermissionsReturn {
   hasPermission: (permission: Permission) => boolean

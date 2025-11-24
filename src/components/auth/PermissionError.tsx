@@ -1,10 +1,10 @@
-import { useUserRole } from '@/hooks/use-user-role'
-import { usePermissions } from '@/hooks/use-permissions'
-import type { Permission } from '@/types/api'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { AlertCircle, Lock, HelpCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { usePermissions } from '@/hooks/use-permissions'
+import { useUserRole } from '@/hooks/use-user-role'
+import type { Permission } from '@/types/api'
+import { AlertCircle, HelpCircle, Lock } from 'lucide-react'
 
 interface PermissionErrorProps {
   requiredPermission?: Permission

@@ -1,10 +1,10 @@
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { usePermissions } from '@/hooks/use-permissions'
 import { useUserRole } from '@/hooks/use-user-role'
-import { ROLE_PERMISSIONS, PERMISSIONS, Permission } from '@/types/api'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { CheckCircle2, XCircle, Info } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PERMISSIONS, Permission, ROLE_PERMISSIONS } from '@/types/api'
+import { CheckCircle2, Info, XCircle } from 'lucide-react'
 
 interface PermissionInfoProps {
   className?: string

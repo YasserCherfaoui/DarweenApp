@@ -1,9 +1,9 @@
-import { useStore } from '@tanstack/react-store'
-import { portalStore } from '@/stores/portal-store'
-import { companyStore } from '@/stores/company-store'
-import { RoleBadge } from './RoleBadge'
-import { Building2, Store } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { companyStore } from '@/stores/company-store'
+import { portalStore } from '@/stores/portal-store'
+import { useStore } from '@tanstack/react-store'
+import { Building2, Store } from 'lucide-react'
+import { RoleBadge } from './RoleBadge'
 
 interface ContextIndicatorProps {
   className?: string

@@ -1,13 +1,13 @@
-import { useUserRole } from '@/hooks/use-user-role'
 import { Badge } from '@/components/ui/badge'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { Crown, Shield, UserCog, User } from 'lucide-react'
+import { useUserRole } from '@/hooks/use-user-role'
 import { cn } from '@/lib/utils'
+import { Crown, Shield, User, UserCog } from 'lucide-react'
 
 interface RoleBadgeProps {
   className?: string

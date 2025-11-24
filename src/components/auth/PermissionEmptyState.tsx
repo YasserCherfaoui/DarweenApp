@@ -1,12 +1,10 @@
-import { ReactNode } from 'react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { usePermissions } from '@/hooks/use-permissions'
 import { useUserRole } from '@/hooks/use-user-role'
 import type { Permission } from '@/types/api'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Lock, AlertCircle, Info } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { PermissionError } from './PermissionError'
+import { AlertCircle, Info, Lock } from 'lucide-react'
+import { ReactNode } from 'react'
 
 interface PermissionEmptyStateProps {
   requiredPermission?: Permission

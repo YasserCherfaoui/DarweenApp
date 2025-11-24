@@ -1,14 +1,14 @@
-import { ReactNode } from 'react'
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { usePermissions } from '@/hooks/use-permissions'
 import { useUserRole } from '@/hooks/use-user-role'
 import type { Permission } from '@/types/api'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { Lock, Info } from 'lucide-react'
+import { Info, Lock } from 'lucide-react'
+import { ReactNode } from 'react'
 
 interface PermissionTooltipProps {
   children: ReactNode

@@ -1,6 +1,5 @@
-import { toast } from 'sonner'
-import { Lock, AlertCircle, CheckCircle2, Info } from 'lucide-react'
 import type { Permission } from '@/types/api'
+import { toast } from 'sonner'
 import { useUserRole } from './use-user-role'
 
 // Permission descriptions for toast messages
