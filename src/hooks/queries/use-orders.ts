@@ -381,3 +381,61 @@ export const useDeleteWooCommerceWebhookConfig = (companyId: number) => {
   })
 }
 
+// Delivery Fee
+export const useDeliveryFee = (
+  companyId: number,
+  params: {
+    provider: string
+    deliveryType: 'home' | 'stop_desk'
+    communeId?: number
+    centerId?: number
+    fromWilayaId?: number
+    shippingWilayaId?: number
+  }
+) => {
+  return useQuery({
+    queryKey: [
+      'deliveryFee',
+      companyId,
+      params.provider,
+      params.deliveryType,
+      params.communeId,
+      params.centerId,
+      params.fromWilayaId,
+    ],
+    queryFn: async () => {
+      if (!params.shippingWilayaId || !params.fromWilayaId) {
+        return null
+      }
+
+      if (params.deliveryType === 'home' && params.communeId) {
+        const response = await apiClient.orders.getDeliveryFee(companyId, {
+          provider: params.provider,
+          commune_id: params.communeId,
+          from_wilaya_id: params.fromWilayaId,
+        })
+        return response.data
+      }
+
+      if (params.deliveryType === 'stop_desk' && params.centerId) {
+        const response = await apiClient.orders.getDeliveryFee(companyId, {
+          provider: params.provider,
+          center_id: params.centerId,
+          from_wilaya_id: params.fromWilayaId,
+        })
+        return response.data
+      }
+
+      return null
+    },
+    enabled:
+      !!companyId &&
+      !!params.shippingWilayaId &&
+      !!params.fromWilayaId &&
+      ((params.deliveryType === 'home' && !!params.communeId) ||
+        (params.deliveryType === 'stop_desk' && !!params.centerId)),
+  })
+}
+
+
+

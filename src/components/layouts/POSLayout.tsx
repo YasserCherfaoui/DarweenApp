@@ -2,6 +2,7 @@ import { ReactNode } from 'react'
 import { POSSidebar } from './POSSidebar'
 import { UserMenu } from './UserMenu'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { toggleSidebar } from '@/stores/sidebar-store'
 import { Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -49,7 +50,10 @@ export function POSLayout({ children }: POSLayoutProps) {
                 </div>
               </div>
             </div>
-            <UserMenu />
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <UserMenu />
+            </div>
           </header>
           <main className="flex-1 overflow-y-auto p-6">
             {children}

@@ -1,6 +1,7 @@
 import { PortalSelectionScreen } from '@/components/auth/PortalSelectionScreen'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { RoleSwitcher } from '@/components/auth/RoleSwitcher'
+import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { useUserPortals } from '@/hooks/queries/use-portals'
 import { portalStore } from '@/stores/portal-store'
@@ -61,6 +62,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <RoleSwitcher />
             </div>
             <div className="flex items-center gap-3">
+              <ThemeToggle />
               <UserMenu />
             </div>
           </header>

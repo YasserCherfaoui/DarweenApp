@@ -1,47 +1,13 @@
-import { createRoute, useNavigate, Link } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
-import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { NotFound } from '@/components/ui/not-found'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Separator } from '@/components/ui/separator'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CompanyUsersTable } from '@/components/companies/CompanyUsersTable'
 import { AddUserDialog } from '@/components/companies/AddUserDialog'
-import { UpdateRoleDialog } from '@/components/companies/UpdateRoleDialog'
+import { CompanyUsersTable } from '@/components/companies/CompanyUsersTable'
 import { CredentialsDialog } from '@/components/companies/CredentialsDialog'
-import { SMTPConfigList } from '@/components/companies/SMTPConfigList'
 import { SMTPConfigDialog } from '@/components/companies/SMTPConfigDialog'
-import { YalidineConfigList } from '@/components/companies/YalidineConfigList'
+import { SMTPConfigList } from '@/components/companies/SMTPConfigList'
+import { UpdateRoleDialog } from '@/components/companies/UpdateRoleDialog'
 import { YalidineConfigDialog } from '@/components/companies/YalidineConfigDialog'
+import { YalidineConfigList } from '@/components/companies/YalidineConfigList'
 import { EmailComposerDialog } from '@/components/emails/EmailComposerDialog'
-import { 
-  useCompany, 
-  useCompanyUsers, 
-  useInitializeCompanyInventory,
-  useAddUserToCompany,
-  useRemoveUserFromCompany,
-  useUpdateCompanyUserRole,
-} from '@/hooks/queries/use-companies'
-import {
-  useSMTPConfigs,
-  useCreateSMTPConfig,
-} from '@/hooks/queries/use-smtp-configs'
-import {
-  useYalidineConfigs,
-  useCreateYalidineConfig,
-  useTestYalidineConnection,
-} from '@/hooks/queries/use-yalidine-configs'
-import { apiClient } from '@/lib/api-client'
-import { toast } from 'sonner'
-import { useQueryClient } from '@tanstack/react-query'
-import { useSelectedCompany } from '@/hooks/use-selected-company'
-import { useAuth } from '@/hooks/use-auth'
-import { ArrowLeft, Edit, Users, Package, Truck, Warehouse, Store, Mail, Plus, TestTube } from 'lucide-react'
-import { rootRoute } from '@/main'
-import type { UserWithRole, SMTPConfigResponse, CreateSMTPConfigRequest, UpdateSMTPConfigRequest, SMTPSecurityType, YalidineConfigResponse, CreateYalidineConfigRequest, UpdateYalidineConfigRequest } from '@/types/api'
+import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -52,6 +18,40 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { NotFound } from '@/components/ui/not-found'
+import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  useAddUserToCompany,
+  useCompany,
+  useCompanyUsers,
+  useInitializeCompanyInventory,
+  useRemoveUserFromCompany,
+  useUpdateCompanyUserRole,
+} from '@/hooks/queries/use-companies'
+import {
+  useCreateSMTPConfig,
+  useSMTPConfigs,
+} from '@/hooks/queries/use-smtp-configs'
+import {
+  useCreateYalidineConfig,
+  useTestYalidineConnection,
+  useYalidineConfigs,
+} from '@/hooks/queries/use-yalidine-configs'
+import { useAuth } from '@/hooks/use-auth'
+import { useSelectedCompany } from '@/hooks/use-selected-company'
+import { apiClient } from '@/lib/api-client'
+import { rootRoute } from '@/main'
+import type { AddUserToCompanyResponse, CreateSMTPConfigRequest, CreateYalidineConfigRequest, SMTPConfigResponse, SMTPSecurityType, UpdateSMTPConfigRequest, UpdateYalidineConfigRequest, UserWithRole, YalidineConfigResponse } from '@/types/api'
+import { useQueryClient } from '@tanstack/react-query'
+import { Link, createRoute, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft, Edit, Mail, Package, Plus, Store, TestTube, Truck, Users, Warehouse } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
 export const CompanyDetailsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -100,6 +100,10 @@ function CompanyDetailsPage() {
   const [yalidineConfigToDelete, setYalidineConfigToDelete] = useState<YalidineConfigResponse | null>(null)
   const [deleteYalidineConfigDialogOpen, setDeleteYalidineConfigDialogOpen] = useState(false)
   const testYalidineConnection = useTestYalidineConnection(companyIdNum)
+  const hasValidDefaultYalidineConfig = useMemo(
+    () => (yalidineConfigs || []).some((config) => config.is_default && config.is_active),
+    [yalidineConfigs]
+  )
 
   // Sync the selected company with the URL param
   useEffect(() => {
@@ -753,6 +757,7 @@ function CompanyDetailsPage() {
         initialData={yalidineConfigToEdit || undefined}
         onSubmit={handleSubmitYalidineConfig}
         isLoading={createYalidineConfig.isPending}
+        hasValidDefaultYalidineConfig={hasValidDefaultYalidineConfig}
       />
 
       <AlertDialog open={deleteYalidineConfigDialogOpen} onOpenChange={setDeleteYalidineConfigDialogOpen}>

@@ -49,6 +49,7 @@ interface YalidineConfigFormProps {
   }) => void
   isLoading?: boolean
   submitLabel?: string
+  hasValidDefaultYalidineConfig?: boolean
 }
 
 export function YalidineConfigForm({
@@ -56,10 +57,12 @@ export function YalidineConfigForm({
   onSubmit,
   isLoading,
   submitLabel = 'Save',
+  hasValidDefaultYalidineConfig = false,
 }: YalidineConfigFormProps) {
   const { selectedCompany } = useSelectedCompany()
   const companyId = selectedCompany?.id || 0
-  const { data: wilayasData } = useYalidineWilayas(companyId)
+  const canLoadWilayas = Boolean(companyId && hasValidDefaultYalidineConfig)
+  const { data: wilayasData } = useYalidineWilayas(canLoadWilayas ? companyId : 0)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(yalidineConfigSchema),
@@ -220,11 +223,11 @@ export function YalidineConfigForm({
               </FormLabel>
               <FormControl>
                 <Select
-                  value={field.value?.toString() || ''}
+                  value={field.value?.toString() || 'none'}
                   onValueChange={(value) => {
-                    field.onChange(value ? parseInt(value) : null)
+                    field.onChange(value === 'none' ? null : parseInt(value))
                   }}
-                  disabled={isLoading || !companyId}
+                  disabled={isLoading || !companyId || !canLoadWilayas}
                 >
                   <SelectTrigger
                     className={cn(
@@ -235,7 +238,7 @@ export function YalidineConfigForm({
                     <SelectValue placeholder="Select origin wilaya (where you ship from)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None (Optional)</SelectItem>
+                    <SelectItem value="none">None (Optional)</SelectItem>
                     {wilayas.map((wilaya) => (
                       <SelectItem key={wilaya.id} value={wilaya.id.toString()}>
                         {wilaya.name}
@@ -245,7 +248,9 @@ export function YalidineConfigForm({
                 </Select>
               </FormControl>
               <FormDescription>
-                Select the wilaya (state) where your company ships from. This is required for calculating delivery fees using the Yalidine fees API.
+                {canLoadWilayas
+                  ? 'Select the wilaya (state) where your company ships from. This is required for calculating delivery fees using the Yalidine fees API.'
+                  : 'Set a default Yalidine configuration to fetch available wilayas, then edit again to choose the origin wilaya.'}
               </FormDescription>
               <FormMessage className="text-red-600 font-medium" />
             </FormItem>

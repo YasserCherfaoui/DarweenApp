@@ -451,7 +451,7 @@ class ApiClient {
       data: UpdateYalidineConfigRequest
     ): Promise<ApiResponse<YalidineConfigResponse>> => {
       return this.request(`/companies/${companyId}/yalidine-configs/${configId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         body: JSON.stringify(data),
       })
     },
@@ -1792,7 +1792,7 @@ class ApiClient {
 
     getDeliveryFee: async (
       companyId: number,
-      params: { provider: string; commune_id?: number; center_id?: number }
+      params: { provider: string; commune_id?: number; center_id?: number; from_wilaya_id?: number }
     ): Promise<ApiResponse<{ fee: number; currency: string }>> => {
       const query = new URLSearchParams()
       query.append('provider', params.provider)
@@ -1801,6 +1801,9 @@ class ApiClient {
       }
       if (params.center_id) {
         query.append('center_id', params.center_id.toString())
+      }
+      if (params.from_wilaya_id) {
+        query.append('from_wilaya_id', params.from_wilaya_id.toString())
       }
       return this.request(`/companies/${companyId}/orders/delivery-fee?${query.toString()}`)
     },

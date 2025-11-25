@@ -116,16 +116,16 @@ export function ClientStatusDialog({
               <div>
                 <Label>Sub Qualification</Label>
                 <Select
-                  value={subQualificationId?.toString() || ''}
+                  value={subQualificationId?.toString() || 'none'}
                   onValueChange={(value) =>
-                    setSubQualificationId(value ? parseInt(value) : undefined)
+                    setSubQualificationId(value === 'none' ? undefined : parseInt(value))
                   }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select sub-qualification (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {selectedQualification.sub_qualifications.map((subQual) => (
                       <SelectItem
                         key={subQual.id}
@@ -174,4 +174,6 @@ export function ClientStatusDialog({
     </Dialog>
   )
 }
+
+
 

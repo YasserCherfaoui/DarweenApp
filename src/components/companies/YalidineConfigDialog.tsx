@@ -15,6 +15,7 @@ interface YalidineConfigDialogProps {
   isLoading?: boolean
   title?: string
   description?: string
+  hasValidDefaultYalidineConfig?: boolean
 }
 
 export function YalidineConfigDialog({
@@ -25,6 +26,7 @@ export function YalidineConfigDialog({
   isLoading,
   title,
   description,
+  hasValidDefaultYalidineConfig,
 }: YalidineConfigDialogProps) {
   const handleSubmit = (data: {
     api_id: string
@@ -56,6 +58,7 @@ export function YalidineConfigDialog({
           onSubmit={handleSubmit}
           isLoading={isLoading}
           submitLabel={initialData ? 'Update' : 'Create'}
+          hasValidDefaultYalidineConfig={hasValidDefaultYalidineConfig}
         />
       </DialogContent>
     </Dialog>

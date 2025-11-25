@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -16,11 +17,155 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Card } from '@/components/ui/card'
-import type { Order, ConfirmOrderRequest, ConfirmOrderItemRequest } from '@/types/api'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import type { Order, ConfirmOrderRequest, ConfirmOrderItemRequest, OrderItem } from '@/types/api'
 import { apiClient } from '@/lib/api-client'
 import { toast } from 'sonner'
 import { useYalidineWilayas, useYalidineCommunes, useYalidineCenters } from '@/hooks/queries/use-yalidine-api'
+import { useYalidineConfigs } from '@/hooks/queries/use-yalidine-configs'
+import { useDeliveryFee } from '@/hooks/queries/use-orders'
+import { useProducts } from '@/hooks/queries/use-products'
+import type { Product, ProductVariant } from '@/types/api'
+
+interface VariantSelectorItemProps {
+  index: number
+  item: ConfirmOrderItemRequest
+  orderItem: OrderItem
+  selectedVariant: (ProductVariant & { product?: Product }) | null | undefined
+  allVariants: Array<ProductVariant & { product?: Product }>
+  onSelectVariant: (variant: ProductVariant & { product?: Product }) => void
+  onUpdateQuantity: (value: number) => void
+  onUpdatePrice: (value: number) => void
+}
+
+function VariantSelectorItem({
+  index,
+  item,
+  orderItem,
+  selectedVariant,
+  allVariants,
+  onSelectVariant,
+  onUpdateQuantity,
+  onUpdatePrice,
+}: VariantSelectorItemProps) {
+  const [comboboxOpen, setComboboxOpen] = useState(false)
+
+  const getVariantDisplayValue = (variant: (ProductVariant & { product?: Product }) | null | undefined) => {
+    if (!variant) {
+      if (orderItem.is_snapshot) {
+        return `Variant Snapshot #${orderItem.product_variant_id || 'N/A'}`
+      }
+      return 'Select variant...'
+    }
+    return variant.sku || 'No SKU'
+  }
+
+  const handleVariantSelect = (value: string) => {
+    const variant = allVariants.find((v) => v.sku === value)
+    if (variant) {
+      onSelectVariant(variant)
+      setComboboxOpen(false)
+    }
+  }
+
+  return (
+    <div className="flex items-end gap-4 p-4 border rounded-md">
+      <div className="flex-1">
+        <Label>Product Variant <span className="text-red-500">*</span></Label>
+        <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              role="combobox"
+              aria-expanded={comboboxOpen}
+              className="w-full justify-between mt-1"
+            >
+              <span className="truncate">
+                {getVariantDisplayValue(selectedVariant)}
+              </span>
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[600px] p-0">
+            <Command>
+              <CommandInput placeholder="Search variant by SKU..." />
+              <CommandList>
+                <CommandEmpty>No variant found.</CommandEmpty>
+                <CommandGroup>
+                  {allVariants.map((variant) => {
+                    if (!variant.sku) return null
+                    return (
+                      <CommandItem
+                        key={variant.id}
+                        value={variant.sku}
+                        onSelect={handleVariantSelect}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <Check
+                            className={cn(
+                              'h-4 w-4',
+                              selectedVariant?.id === variant.id
+                                ? 'opacity-100'
+                                : 'opacity-0'
+                            )}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium font-mono truncate">
+                              {variant.sku}
+                            </div>
+                          </div>
+                        </div>
+                      </CommandItem>
+                    )
+                  })}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+      </div>
+      <div className="w-32">
+        <Label>Quantity <span className="text-red-500">*</span></Label>
+        <Input
+          type="number"
+          step="0.01"
+          min="0.01"
+          value={item.confirmed_quantity ?? orderItem.quantity}
+          onChange={(e) => onUpdateQuantity(parseFloat(e.target.value) || 0)}
+          required
+        />
+      </div>
+      <div className="w-32">
+        <Label>Price <span className="text-red-500">*</span></Label>
+        <Input
+          type="number"
+          step="0.01"
+          min="0"
+          value={item.confirmed_price ?? orderItem.price}
+          onChange={(e) => onUpdatePrice(parseFloat(e.target.value) || 0)}
+          required
+        />
+      </div>
+    </div>
+  )
+}
 
 interface ConfirmOrderDialogProps {
   open: boolean
@@ -37,15 +182,26 @@ export function ConfirmOrderDialog({
   companyId,
   onSuccess,
 }: ConfirmOrderDialogProps) {
-  const [shippingProvider, setShippingProvider] = useState('yalidine')
+  const [shippingProvider, setShippingProvider] = useState<'yalidine' | 'my_delivery'>('yalidine')
   const [deliveryType, setDeliveryType] = useState<'home' | 'stop_desk'>('home')
   const [shippingWilayaId, setShippingWilayaId] = useState<number | undefined>()
   const [shippingWilayaName, setShippingWilayaName] = useState<string>('')
+  const [fromWilayaId, setFromWilayaId] = useState<number | undefined>()
   const [communeId, setCommuneId] = useState<number | undefined>()
   const [centerId, setCenterId] = useState<number | undefined>()
   const [secondDeliveryCost, setSecondDeliveryCost] = useState(0)
-  const [firstDeliveryCost, setFirstDeliveryCost] = useState(0)
-  const [loadingFee, setLoadingFee] = useState(false)
+  const deliveryFeeInitializedRef = useRef(false)
+  const defaultFromWilayaIdSetRef = useRef(false)
+
+  // Customer details state
+  const [customerFullName, setCustomerFullName] = useState('')
+  const [customerPhone, setCustomerPhone] = useState('')
+  const [customerPhone2, setCustomerPhone2] = useState('')
+  const [customerAddress, setCustomerAddress] = useState('')
+  const [customerState, setCustomerState] = useState('')
+  const [customerComments, setCustomerComments] = useState('')
+  const [discount, setDiscount] = useState(0)
+
   const [items, setItems] = useState<ConfirmOrderItemRequest[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -53,7 +209,47 @@ export function ConfirmOrderDialog({
   const { data: wilayasData } = useYalidineWilayas(companyId)
   const { data: communesData } = useYalidineCommunes(companyId, shippingWilayaId)
   const { data: centersData } = useYalidineCenters(companyId, shippingWilayaId)
+  const { data: yalidineConfigs } = useYalidineConfigs(companyId)
+  const defaultYalidineConfig = useMemo(() => {
+    return yalidineConfigs?.find((config) => config.is_default && config.is_active)
+  }, [yalidineConfigs])
 
+  // Fetch products for variant information
+  const { data: productsData } = useProducts(companyId, { page: 1, limit: 1000 })
+  
+  // Build all variants list - memoized to prevent unnecessary re-renders
+  const allVariants = useMemo(() => {
+    const variants: Array<ProductVariant & { product?: Product }> = []
+    if (productsData?.data) {
+      productsData.data.forEach((product: Product) => {
+        if (product.variants && product.variants.length > 0) {
+          product.variants.forEach((variant) => {
+            if (variant.is_active) {
+              variants.push({ ...variant, product })
+            }
+          })
+        }
+      })
+    }
+    return variants
+  }, [productsData])
+
+  // Fetch delivery fee using React Query
+  const { data: deliveryFeeData, isLoading: loadingDeliveryFee } = useDeliveryFee(
+    companyId,
+    {
+      provider: shippingProvider,
+      deliveryType,
+      communeId,
+      centerId,
+      fromWilayaId,
+      shippingWilayaId,
+    }
+  )
+
+  const firstDeliveryCost = deliveryFeeData?.fee || 0
+
+  // Initialize all fields from order when it changes
   useEffect(() => {
     if (order) {
       // Initialize items from order
@@ -63,45 +259,84 @@ export function ConfirmOrderDialog({
         confirmed_price: item.confirmed_price ?? item.price,
       }))
       setItems(initialItems)
+      
+      // Initialize shipping fields
+      setShippingProvider(order.shipping_provider || 'yalidine')
+      setDeliveryType(order.delivery_type || 'home')
+      setCommuneId(order.commune_id)
+      setCenterId(order.center_id)
       setSecondDeliveryCost(order.second_delivery_cost || 0)
+      
+      // Initialize customer details
+      setCustomerFullName(order.customer_full_name || '')
+      setCustomerPhone(order.customer_phone || '')
+      setCustomerPhone2(order.customer_phone2 || '')
+      setCustomerAddress(order.customer_address || '')
+      setCustomerState(order.customer_state || '')
+      setCustomerComments(order.customer_comments || '')
+      setDiscount(order.discount || 0)
+      
+      // Try to find shipping wilaya ID from customer_state
+      if (order.customer_state && wilayasData?.data) {
+        const matchingWilaya = wilayasData.data.find(
+          (w) => w.name.toLowerCase() === order.customer_state.toLowerCase()
+        )
+        if (matchingWilaya) {
+          setShippingWilayaId(matchingWilaya.id)
+          setShippingWilayaName(matchingWilaya.name)
+        }
+      }
+      
+      // Reset delivery fee initialization
+      deliveryFeeInitializedRef.current = false
     }
-  }, [order])
+  }, [order, wilayasData])
 
-  const fetchDeliveryFee = async () => {
-    if (!order) return
-
-    setLoadingFee(true)
-    try {
-      // This would call an endpoint to get delivery fee
-      // For now, we'll use a placeholder
-      // In production, this would call: /api/v1/companies/:companyId/orders/:orderId/delivery-fee
-      // with commune_id or center_id
-      const fee = 500 // Placeholder
-      setFirstDeliveryCost(fee)
-      setSecondDeliveryCost(fee)
-    } catch (error) {
-      toast.error('Failed to fetch delivery fee')
-    } finally {
-      setLoadingFee(false)
+  // Set default from_wilaya_id from Yalidine config (only once)
+  const defaultFromWilayaId = useMemo(() => {
+    return defaultYalidineConfig?.from_wilaya_id
+  }, [defaultYalidineConfig])
+  
+  useEffect(() => {
+    // Only set once, and only if we have a valid value and haven't set it yet
+    if (defaultFromWilayaId && !defaultFromWilayaIdSetRef.current && (!fromWilayaId || isNaN(fromWilayaId))) {
+      setFromWilayaId(defaultFromWilayaId)
+      defaultFromWilayaIdSetRef.current = true
     }
-  }
+  }, [defaultFromWilayaId, fromWilayaId])
+
+  // Sync shipping state to customer state
+  useEffect(() => {
+    if (shippingWilayaName) {
+      setCustomerState(shippingWilayaName)
+    }
+  }, [shippingWilayaName])
 
   // Reset commune/center when wilaya changes
   useEffect(() => {
     setCommuneId(undefined)
     setCenterId(undefined)
+    setSecondDeliveryCost(0)
+    deliveryFeeInitializedRef.current = false
   }, [shippingWilayaId])
 
+  // Sync delivery fee from React Query to editable state (only once when fee becomes available)
   useEffect(() => {
-    if (deliveryType === 'home' && communeId) {
-      fetchDeliveryFee()
-    } else if (deliveryType === 'stop_desk' && centerId) {
-      fetchDeliveryFee()
+    if (firstDeliveryCost > 0 && !deliveryFeeInitializedRef.current) {
+      setSecondDeliveryCost(firstDeliveryCost)
+      deliveryFeeInitializedRef.current = true
+    } else if (firstDeliveryCost === 0) {
+      deliveryFeeInitializedRef.current = false
     }
-  }, [deliveryType, communeId, centerId])
+  }, [firstDeliveryCost])
 
   const handleSubmit = async () => {
     if (!order) return
+
+    if (!fromWilayaId) {
+      toast.error('Please select an origin wilaya')
+      return
+    }
 
     if (deliveryType === 'home' && !communeId) {
       toast.error('Please select a commune')
@@ -135,252 +370,362 @@ export function ConfirmOrderDialog({
     }
   }
 
-  const calculateTotal = () => {
+  const calculateTotal = useMemo(() => {
     const productTotal = items.reduce(
       (sum, item) =>
         sum + (item.confirmed_quantity ?? 0) * (item.confirmed_price ?? 0),
       0
     )
-    return productTotal + secondDeliveryCost - (order?.discount || 0)
-  }
+    return productTotal + secondDeliveryCost - discount
+  }, [items, secondDeliveryCost, discount])
+
+  const wilayas = wilayasData?.data || []
+  const communes = communesData?.data || []
+  const centers = centersData?.data || []
 
   if (!order) return null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent size="full" className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Confirm Order #{order.id}</DialogTitle>
           <DialogDescription>
-            Configure shipping details and confirm order items
+            Review and update order details before confirming
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
-          {/* Shipping Section */}
-          <Card className="p-4">
-            <h3 className="font-semibold mb-4">Shipping</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>
-                  Shipping Provider <span className="text-red-500">*</span>
-                </Label>
-                <Select value={shippingProvider} onValueChange={setShippingProvider}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="yalidine">Yalidine</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>
-                  Delivery Type <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={deliveryType}
-                  onValueChange={(value) => {
-                    setDeliveryType(value as 'home' | 'stop_desk')
-                    setCommuneId(undefined)
-                    setCenterId(undefined)
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="home">Home</SelectItem>
-                    <SelectItem value="stop_desk">Stop Desk</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>
-                  State (Wilaya) <span className="text-red-500">*</span>
-                </Label>
-                <Select
-                  value={shippingWilayaId?.toString() || ''}
-                  onValueChange={(value) => {
-                    const wilayaId = parseInt(value)
-                    const wilaya = wilayasData?.data?.find((w) => w.id === wilayaId)
-                    setShippingWilayaId(wilayaId)
-                    setShippingWilayaName(wilaya?.name || '')
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select wilaya" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {wilayasData?.data?.map((wilaya) => (
-                      <SelectItem key={wilaya.id} value={wilaya.id.toString()}>
-                        {wilaya.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {deliveryType === 'home' ? (
-                <div>
-                  <Label>
-                    Commune <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={communeId?.toString() || ''}
-                    onValueChange={(value) => setCommuneId(parseInt(value))}
-                    disabled={!shippingWilayaId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={shippingWilayaId ? "Select commune" : "Select wilaya first"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {communesData?.data?.map((commune) => (
-                        <SelectItem key={commune.id} value={commune.id.toString()}>
-                          {commune.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : (
-                <div>
-                  <Label>
-                    Stop Desk <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={centerId?.toString() || ''}
-                    onValueChange={(value) => setCenterId(parseInt(value))}
-                    disabled={!shippingWilayaId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={shippingWilayaId ? "Select center" : "Select wilaya first"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {centersData?.data?.map((center) => (
-                        <SelectItem key={center.center_id} value={center.center_id.toString()}>
-                          {center.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-          </Card>
-
-          {/* Delivery Fee */}
-          <div>
-            <Label>Delivery Fee</Label>
-            {firstDeliveryCost > 0 && (
-              <p className="text-sm text-gray-500 mb-2">
-                Suggested fee: {firstDeliveryCost.toFixed(2)} DZD
-              </p>
-            )}
-            <Input
-              type="number"
-              step="0.01"
-              value={secondDeliveryCost}
-              onChange={(e) => setSecondDeliveryCost(parseFloat(e.target.value) || 0)}
-            />
-          </div>
-
-          {/* Order Items */}
-          <div>
-            <Label>Order Items</Label>
-            <div className="space-y-2 mt-2">
-              {items.map((item, index) => {
-                const orderItem = order.items.find((i) => i.id === item.id)
-                if (!orderItem) return null
-
-                return (
-                  <Card key={item.id} className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        {orderItem.is_snapshot && (
-                          <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded mr-2">
-                            Snapshot
-                          </span>
-                        )}
-                        <span>
-                          {orderItem.product_variant_id
-                            ? `Variant #${orderItem.product_variant_id}`
-                            : 'Product from webhook'}
-                        </span>
+          {/* Main sections in flex layout */}
+          <div className="flex gap-6">
+            {/* Left column: Shipping */}
+            <div className="flex-1 min-w-0 space-y-6">
+              {/* Shipping Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Shipping</CardTitle>
+                  <CardDescription>
+                    Select shipping provider and delivery details
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <div>
+                      <Label>
+                        Shipping Provider <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="flex gap-4 mt-2">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="shipping_provider_yalidine"
+                            name="shipping_provider"
+                            value="yalidine"
+                            checked={shippingProvider === 'yalidine'}
+                            onChange={(e) => setShippingProvider(e.target.value as 'yalidine')}
+                            className="h-4 w-4 text-primary focus:ring-primary"
+                          />
+                          <Label htmlFor="shipping_provider_yalidine" className="font-normal cursor-pointer">
+                            Yalidine
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="shipping_provider_my_delivery"
+                            name="shipping_provider"
+                            value="my_delivery"
+                            checked={shippingProvider === 'my_delivery'}
+                            onChange={(e) => setShippingProvider(e.target.value as 'yalidine' | 'my_delivery')}
+                            className="h-4 w-4 text-primary focus:ring-primary"
+                            disabled
+                          />
+                          <Label htmlFor="shipping_provider_my_delivery" className="font-normal cursor-pointer">
+                            My Delivery Companies
+                          </Label>
+                        </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-xs">Quantity</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={item.confirmed_quantity ?? orderItem.quantity}
-                          onChange={(e) => {
-                            const newItems = [...items]
-                            newItems[index].confirmed_quantity = parseFloat(
-                              e.target.value
-                            )
-                            setItems(newItems)
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <Label className="text-xs">Price</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={item.confirmed_price ?? orderItem.price}
-                          onChange={(e) => {
-                            const newItems = [...items]
-                            newItems[index].confirmed_price = parseFloat(e.target.value)
-                            setItems(newItems)
-                          }}
-                        />
+                    <div>
+                      <Label>
+                        Delivery Type <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="flex gap-4 mt-2">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="delivery_type_home"
+                            name="delivery_type"
+                            value="home"
+                            checked={deliveryType === 'home'}
+                            onChange={(e) => {
+                              setDeliveryType(e.target.value as 'home' | 'stop_desk')
+                              setCommuneId(undefined)
+                              setCenterId(undefined)
+                            }}
+                            className="h-4 w-4 text-primary focus:ring-primary"
+                          />
+                          <Label htmlFor="delivery_type_home" className="font-normal cursor-pointer">
+                            Home
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="delivery_type_stop_desk"
+                            name="delivery_type"
+                            value="stop_desk"
+                            checked={deliveryType === 'stop_desk'}
+                            onChange={(e) => {
+                              setDeliveryType(e.target.value as 'home' | 'stop_desk')
+                              setCommuneId(undefined)
+                              setCenterId(undefined)
+                            }}
+                            className="h-4 w-4 text-primary focus:ring-primary"
+                          />
+                          <Label htmlFor="delivery_type_stop_desk" className="font-normal cursor-pointer">
+                            Stop Desk
+                          </Label>
+                        </div>
                       </div>
                     </div>
-                  </Card>
-                )
-              })}
+                    <div>
+                      <Label htmlFor="commune">
+                        Select Commune <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={communeId?.toString() || ''}
+                        onValueChange={(value) => setCommuneId(parseInt(value))}
+                        disabled={!shippingWilayaId}
+                      >
+                        <SelectTrigger className="w-full mt-2">
+                          <SelectValue placeholder="Select a commune" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {communes.map((commune) => (
+                            <SelectItem key={commune.id} value={commune.id.toString()}>
+                              {commune.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </div>
 
-          {/* Summary */}
-          <Card className="p-4">
-            <h3 className="font-semibold mb-4">Summary</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Product Total:</span>
-                <span>
-                  {items
-                    .reduce(
-                      (sum, item) =>
-                        sum +
-                        (item.confirmed_quantity ?? 0) * (item.confirmed_price ?? 0),
-                      0
+            {/* Middle column: Customer Details */}
+            <div className="flex-1 min-w-0 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Customer Details</CardTitle>
+                  <CardDescription>
+                    Enter customer information for this order
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="customer_full_name">
+                        Full Name <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="customer_full_name"
+                        value={customerFullName}
+                        onChange={(e) => setCustomerFullName(e.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="customer_phone">
+                        Phone Number <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="customer_phone"
+                        value={customerPhone}
+                        onChange={(e) => setCustomerPhone(e.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="customer_phone2">Phone Number 2</Label>
+                      <Input
+                        id="customer_phone2"
+                        value={customerPhone2}
+                        onChange={(e) => setCustomerPhone2(e.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="customer_address">
+                        Address <span className="text-red-500">*</span>
+                      </Label>
+                      <Textarea
+                        id="customer_address"
+                        rows={2}
+                        value={customerAddress}
+                        onChange={(e) => setCustomerAddress(e.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="customer_state">
+                        State <span className="text-red-500">*</span>
+                      </Label>
+                      <Select
+                        value={shippingWilayaId?.toString() || ''}
+                        onValueChange={(value) => {
+                          const wilayaId = parseInt(value)
+                          const wilaya = wilayas.find((w) => w.id === wilayaId)
+                          setShippingWilayaId(wilayaId)
+                          const wilayaName = wilaya?.name || ''
+                          setShippingWilayaName(wilayaName)
+                          setCustomerState(wilayaName)
+                        }}
+                      >
+                        <SelectTrigger className="w-full mt-2">
+                          <SelectValue placeholder="Select a wilaya" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {wilayas.map((wilaya) => (
+                            <SelectItem key={wilaya.id} value={wilaya.id.toString()}>
+                              {wilaya.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="customer_comments">Client Comments</Label>
+                      <Textarea
+                        id="customer_comments"
+                        rows={2}
+                        value={customerComments}
+                        onChange={(e) => setCustomerComments(e.target.value)}
+                        className="mt-2"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right column: Order Items and Summary */}
+            <div className="flex-1 min-w-0 space-y-6">
+              {/* Order Items */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Order Items</CardTitle>
+                  <CardDescription>
+                    Review and update order items
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {items.map((item, index) => {
+                    const orderItem = order.items.find((i) => i.id === item.id)
+                    if (!orderItem) return null
+
+                    // Find the selected variant
+                    const selectedVariant = orderItem.product_variant_id
+                      ? allVariants.find((v) => v.id === orderItem.product_variant_id)
+                      : null
+
+                    // Get display value for the variant
+                    const getVariantDisplayValue = (variant: (ProductVariant & { product?: Product }) | null | undefined) => {
+                      if (!variant) return 'Select variant...'
+                      return `${variant.product?.name || ''} - ${variant.name}${variant.sku ? ` (${variant.sku})` : ''}`
+                    }
+
+                    return (
+                      <VariantSelectorItem
+                        key={item.id}
+                        index={index}
+                        item={item}
+                        orderItem={orderItem}
+                        selectedVariant={selectedVariant}
+                        allVariants={allVariants}
+                        onSelectVariant={(variant) => {
+                          // Note: In confirm dialog, we typically don't change the variant, just display it
+                          // But we'll keep the structure for consistency
+                        }}
+                        onUpdateQuantity={(value) => {
+                          const newItems = [...items]
+                          newItems[index].confirmed_quantity = value
+                          setItems(newItems)
+                        }}
+                        onUpdatePrice={(value) => {
+                          const newItems = [...items]
+                          newItems[index].confirmed_price = value
+                          setItems(newItems)
+                        }}
+                      />
                     )
-                    .toFixed(2)}{' '}
-                  DZD
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Delivery Fee:</span>
-                <span>{secondDeliveryCost.toFixed(2)} DZD</span>
-              </div>
-              {order.discount > 0 && (
-                <div className="flex justify-between text-red-600">
-                  <span>Discount:</span>
-                  <span>-{order.discount.toFixed(2)} DZD</span>
-                </div>
-              )}
-              <div className="flex justify-between border-t pt-2 font-bold text-lg">
-                <span>Total:</span>
-                <span>{calculateTotal().toFixed(2)} DZD</span>
-              </div>
+                  })}
+                </CardContent>
+              </Card>
+
+              {/* Summary */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Summary</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>Product Total:</span>
+                    <span className="font-medium">
+                      {items
+                        .reduce(
+                          (sum, item) =>
+                            sum +
+                            (item.confirmed_quantity ?? 0) * (item.confirmed_price ?? 0),
+                          0
+                        )
+                        .toFixed(2)}{' '}
+                      DZD
+                    </span>
+                  </div>
+                  <div>
+                    <Label htmlFor="delivery_cost">
+                      Delivery Cost <span className="text-red-500">*</span>
+                      {loadingDeliveryFee && (
+                        <span className="ml-2 text-xs text-gray-500">(Loading...)</span>
+                      )}
+                    </Label>
+                    <Input
+                      id="delivery_cost"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={secondDeliveryCost}
+                      onChange={(e) => setSecondDeliveryCost(parseFloat(e.target.value) || 0)}
+                      disabled={loadingDeliveryFee}
+                    />
+                    {firstDeliveryCost > 0 && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Suggested fee: {firstDeliveryCost.toFixed(2)} DZD
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="discount">Discount</Label>
+                    <Input
+                      id="discount"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={discount}
+                      onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div className="flex justify-between border-t pt-2 font-bold text-lg">
+                    <span>Total:</span>
+                    <span>{calculateTotal.toFixed(2)} DZD</span>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </Card>
+          </div>
 
           {/* Actions */}
           <div className="flex justify-end gap-2">
