@@ -63,6 +63,9 @@ import { SetupAccountRoute } from './routes/auth.setup-account'
 import { ChangePasswordOTPRoute } from './routes/auth.change-password-otp'
 import { ProfileRoute } from './routes/profile.index'
 import { SettingsRoute } from './routes/settings.index'
+import { CompanyOrdersRoute } from './routes/companies.$companyId.orders.index'
+import { CompanyOrderRoute } from './routes/companies.$companyId.orders.$orderId'
+import { CreateOrderRoute } from './routes/companies.$companyId.orders.new'
 
 import reportWebVitals from './reportWebVitals.ts'
 import './styles.css'
@@ -106,6 +109,9 @@ const routeTree = rootRoute.addChildren([
   ProductDetailsRoute,
   EditProductRoute,
   BulkCreateVariantsRoute,
+  CompanyOrdersRoute,
+  CompanyOrderRoute,
+  CreateOrderRoute,
   CompanySuppliersIndexRoute,
   CreateSupplierRoute,
   SupplierDetailRoute,

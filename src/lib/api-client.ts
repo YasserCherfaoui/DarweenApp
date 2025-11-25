@@ -89,8 +89,30 @@ import type {
   VerifyEntryBillRequest,
   WarehouseBill,
   YalidineCentersResponse,
+  YalidineWilayasResponse,
+  YalidineCommunesResponse,
+  YalidineFeesResponse,
   YalidineConfigListResponse,
-  YalidineConfigResponse
+  YalidineConfigResponse,
+  Order,
+  OrderItem,
+  ClientStatus,
+  Qualification,
+  ShopifyWebhookConfig,
+  WooCommerceWebhookConfig,
+  CreateOrderRequest,
+  UpdateOrderRequest,
+  ConfirmOrderRequest,
+  UpdateOrderStatusRequest,
+  CreateClientStatusRequest,
+  CreateQualificationRequest,
+  UpdateQualificationRequest,
+  CreateShopifyWebhookConfigRequest,
+  UpdateShopifyWebhookConfigRequest,
+  CreateWooCommerceWebhookConfigRequest,
+  UpdateWooCommerceWebhookConfigRequest,
+  ListOrdersResponse,
+  OrderFilters
 } from '@/types/api'
 
 const API_URL = env.VITE_API_URL
@@ -471,6 +493,54 @@ class ApiClient {
       const queryString = query.toString()
       return this.request(
         `/companies/${companyId}/yalidine/centers${queryString ? `?${queryString}` : ''}`
+      )
+    },
+
+    getWilayas: async (
+      companyId: number,
+      queryParams?: Record<string, string | number>
+    ): Promise<ApiResponse<YalidineWilayasResponse>> => {
+      const query = new URLSearchParams()
+      if (queryParams) {
+        Object.entries(queryParams).forEach(([key, value]) => {
+          query.append(key, value.toString())
+        })
+      }
+      const queryString = query.toString()
+      return this.request(
+        `/companies/${companyId}/yalidine/wilayas${queryString ? `?${queryString}` : ''}`
+      )
+    },
+
+    getCommunes: async (
+      companyId: number,
+      queryParams?: Record<string, string | number>
+    ): Promise<ApiResponse<YalidineCommunesResponse>> => {
+      const query = new URLSearchParams()
+      if (queryParams) {
+        Object.entries(queryParams).forEach(([key, value]) => {
+          query.append(key, value.toString())
+        })
+      }
+      const queryString = query.toString()
+      return this.request(
+        `/companies/${companyId}/yalidine/communes${queryString ? `?${queryString}` : ''}`
+      )
+    },
+
+    getFees: async (
+      companyId: number,
+      queryParams?: Record<string, string | number>
+    ): Promise<ApiResponse<YalidineFeesResponse>> => {
+      const query = new URLSearchParams()
+      if (queryParams) {
+        Object.entries(queryParams).forEach(([key, value]) => {
+          query.append(key, value.toString())
+        })
+      }
+      const queryString = query.toString()
+      return this.request(
+        `/companies/${companyId}/yalidine/fees${queryString ? `?${queryString}` : ''}`
       )
     },
   }
@@ -1630,6 +1700,273 @@ class ApiClient {
           method: 'PUT',
         }
       )
+    },
+  }
+
+  // Order endpoints
+  orders = {
+    list: async (
+      companyId: number,
+      filters?: OrderFilters
+    ): Promise<ApiResponse<ListOrdersResponse>> => {
+      const query = new URLSearchParams()
+      if (filters?.status) query.append('status', filters.status)
+      if (filters?.source) query.append('source', filters.source)
+      if (filters?.date_from) query.append('date_from', filters.date_from)
+      if (filters?.date_to) query.append('date_to', filters.date_to)
+      if (filters?.page) query.append('page', filters.page.toString())
+      if (filters?.limit) query.append('limit', filters.limit.toString())
+      const queryString = query.toString()
+      return this.request(
+        `/companies/${companyId}/orders${queryString ? `?${queryString}` : ''}`
+      )
+    },
+
+    get: async (
+      companyId: number,
+      orderId: number
+    ): Promise<ApiResponse<Order>> => {
+      return this.request(`/companies/${companyId}/orders/${orderId}`)
+    },
+
+    create: async (
+      companyId: number,
+      data: CreateOrderRequest
+    ): Promise<ApiResponse<Order>> => {
+      return this.request(`/companies/${companyId}/orders`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+
+    update: async (
+      companyId: number,
+      orderId: number,
+      data: UpdateOrderRequest
+    ): Promise<ApiResponse<Order>> => {
+      return this.request(`/companies/${companyId}/orders/${orderId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      })
+    },
+
+    updateStatus: async (
+      companyId: number,
+      orderId: number,
+      data: UpdateOrderStatusRequest
+    ): Promise<ApiResponse<Order>> => {
+      return this.request(`/companies/${companyId}/orders/${orderId}/status`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      })
+    },
+
+    confirm: async (
+      companyId: number,
+      orderId: number,
+      data: ConfirmOrderRequest
+    ): Promise<ApiResponse<Order>> => {
+      return this.request(`/companies/${companyId}/orders/${orderId}/confirm`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+
+    cancel: async (
+      companyId: number,
+      orderId: number
+    ): Promise<ApiResponse<Order>> => {
+      return this.request(`/companies/${companyId}/orders/${orderId}/cancel`, {
+        method: 'POST',
+      })
+    },
+
+    relaunch: async (
+      companyId: number,
+      orderId: number
+    ): Promise<ApiResponse<Order>> => {
+      return this.request(`/companies/${companyId}/orders/${orderId}/relaunch`, {
+        method: 'POST',
+      })
+    },
+
+    getDeliveryFee: async (
+      companyId: number,
+      params: { provider: string; commune_id?: number; center_id?: number }
+    ): Promise<ApiResponse<{ fee: number; currency: string }>> => {
+      const query = new URLSearchParams()
+      query.append('provider', params.provider)
+      if (params.commune_id) {
+        query.append('commune_id', params.commune_id.toString())
+      }
+      if (params.center_id) {
+        query.append('center_id', params.center_id.toString())
+      }
+      return this.request(`/companies/${companyId}/orders/delivery-fee?${query.toString()}`)
+    },
+
+    // Client Status endpoints
+    addClientStatus: async (
+      companyId: number,
+      orderId: number,
+      data: CreateClientStatusRequest
+    ): Promise<ApiResponse<ClientStatus>> => {
+      return this.request(
+        `/companies/${companyId}/orders/${orderId}/client-status`,
+        {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }
+      )
+    },
+
+    listClientStatuses: async (
+      companyId: number,
+      orderId: number
+    ): Promise<ApiResponse<ClientStatus[]>> => {
+      return this.request(
+        `/companies/${companyId}/orders/${orderId}/client-status`
+      )
+    },
+
+    // Qualification endpoints
+    qualifications: {
+      list: async (
+        companyId: number
+      ): Promise<ApiResponse<Qualification[]>> => {
+        return this.request(`/companies/${companyId}/qualifications`)
+      },
+
+      create: async (
+        companyId: number,
+        data: CreateQualificationRequest
+      ): Promise<ApiResponse<Qualification>> => {
+        return this.request(`/companies/${companyId}/qualifications`, {
+          method: 'POST',
+          body: JSON.stringify(data),
+        })
+      },
+
+      update: async (
+        companyId: number,
+        qualificationId: number,
+        data: UpdateQualificationRequest
+      ): Promise<ApiResponse<Qualification>> => {
+        return this.request(
+          `/companies/${companyId}/qualifications/${qualificationId}`,
+          {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          }
+        )
+      },
+
+      delete: async (
+        companyId: number,
+        qualificationId: number
+      ): Promise<ApiResponse<null>> => {
+        return this.request(
+          `/companies/${companyId}/qualifications/${qualificationId}`,
+          {
+            method: 'DELETE',
+          }
+        )
+      },
+    },
+
+    // Webhook Config endpoints
+    shopifyWebhookConfigs: {
+      create: async (
+        companyId: number,
+        data: CreateShopifyWebhookConfigRequest
+      ): Promise<ApiResponse<ShopifyWebhookConfig>> => {
+        return this.request(`/companies/${companyId}/webhooks/shopify`, {
+          method: 'POST',
+          body: JSON.stringify(data),
+        })
+      },
+
+      get: async (
+        companyId: number,
+        configId: number
+      ): Promise<ApiResponse<ShopifyWebhookConfig>> => {
+        return this.request(
+          `/companies/${companyId}/webhooks/shopify/${configId}`
+        )
+      },
+
+      update: async (
+        companyId: number,
+        configId: number,
+        data: UpdateShopifyWebhookConfigRequest
+      ): Promise<ApiResponse<ShopifyWebhookConfig>> => {
+        return this.request(
+          `/companies/${companyId}/webhooks/shopify/${configId}`,
+          {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          }
+        )
+      },
+
+      delete: async (
+        companyId: number,
+        configId: number
+      ): Promise<ApiResponse<null>> => {
+        return this.request(
+          `/companies/${companyId}/webhooks/shopify/${configId}`,
+          {
+            method: 'DELETE',
+          }
+        )
+      },
+    },
+
+    woocommerceWebhookConfigs: {
+      create: async (
+        companyId: number,
+        data: CreateWooCommerceWebhookConfigRequest
+      ): Promise<ApiResponse<WooCommerceWebhookConfig>> => {
+        return this.request(`/companies/${companyId}/webhooks/woocommerce`, {
+          method: 'POST',
+          body: JSON.stringify(data),
+        })
+      },
+
+      get: async (
+        companyId: number,
+        configId: number
+      ): Promise<ApiResponse<WooCommerceWebhookConfig>> => {
+        return this.request(
+          `/companies/${companyId}/webhooks/woocommerce/${configId}`
+        )
+      },
+
+      update: async (
+        companyId: number,
+        configId: number,
+        data: UpdateWooCommerceWebhookConfigRequest
+      ): Promise<ApiResponse<WooCommerceWebhookConfig>> => {
+        return this.request(
+          `/companies/${companyId}/webhooks/woocommerce/${configId}`,
+          {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          }
+        )
+      },
+
+      delete: async (
+        companyId: number,
+        configId: number
+      ): Promise<ApiResponse<null>> => {
+        return this.request(
+          `/companies/${companyId}/webhooks/woocommerce/${configId}`,
+          {
+            method: 'DELETE',
+          }
+        )
+      },
     },
   }
 }

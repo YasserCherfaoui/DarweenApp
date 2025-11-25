@@ -473,6 +473,7 @@ export interface YalidineConfig {
 	id: number
 	company_id: number
 	api_id: string
+	from_wilaya_id?: number | null
 	is_active: boolean
 	is_default: boolean
 	created_at: string
@@ -482,12 +483,14 @@ export interface YalidineConfig {
 export interface CreateYalidineConfigRequest {
 	api_id: string
 	api_token: string
+	from_wilaya_id?: number | null
 	is_active?: boolean
 }
 
 export interface UpdateYalidineConfigRequest {
 	api_id?: string
 	api_token?: string
+	from_wilaya_id?: number | null
 	is_active?: boolean
 }
 
@@ -495,6 +498,7 @@ export interface YalidineConfigResponse {
 	id: number
 	company_id: number
 	api_id: string
+	from_wilaya_id?: number | null
 	is_active: boolean
 	is_default: boolean
 	created_at: string
@@ -519,6 +523,60 @@ export interface YalidineCenter {
 
 export interface YalidineCentersResponse {
 	data: YalidineCenter[]
+	has_more: boolean
+	total_data: number
+	links: {
+		self: string
+		next?: string
+	}
+}
+
+export interface YalidineWilaya {
+	id: number
+	name: string
+	zone: number
+	is_deliverable: number
+}
+
+export interface YalidineWilayasResponse {
+	data: YalidineWilaya[]
+	has_more: boolean
+	total_data: number
+	links: {
+		self: string
+		next?: string
+	}
+}
+
+export interface YalidineCommune {
+	id: number
+	name: string
+	wilaya_id: number
+	wilaya_name: string
+	is_deliverable: number
+}
+
+export interface YalidineCommunesResponse {
+	data: YalidineCommune[]
+	has_more: boolean
+	total_data: number
+	links: {
+		self: string
+		next?: string
+	}
+}
+
+export interface YalidineFee {
+	to_wilaya_id: number
+	to_wilaya_name: string
+	to_commune_id: number
+	to_commune_name: string
+	price: number
+	delivery_fee: number
+}
+
+export interface YalidineFeesResponse {
+	data: YalidineFee[]
 	has_more: boolean
 	total_data: number
 	links: {
@@ -1244,6 +1302,211 @@ export interface VerifyEntryBillItemRequest {
 export interface VerifyEntryBillRequest {
   items: VerifyEntryBillItemRequest[]
   notes?: string
+}
+
+// Order types
+export type OrderSource = 'shopify' | 'woocommerce' | 'manual'
+
+export type OrderStatus =
+  | 'unconfirmed'
+  | 'packing'
+  | 'dispatching'
+  | 'delivering'
+  | 'delivered'
+  | 'returning'
+  | 'returned'
+  | 'cancelled'
+  | 'relaunched'
+
+export type DeliveryType = 'home' | 'stop_desk'
+
+export interface Order {
+  id: number
+  company_id: number
+  external_order_id?: string
+  source: OrderSource
+  status: OrderStatus
+  shipping_provider?: string
+  delivery_type?: DeliveryType
+  commune_id?: number
+  center_id?: number
+  customer_full_name: string
+  customer_phone: string
+  customer_phone2: string
+  customer_address: string
+  customer_state: string
+  customer_comments: string
+  product_total: number
+  first_delivery_cost: number
+  second_delivery_cost: number
+  discount: number
+  total: number
+  items: OrderItem[]
+  client_statuses?: ClientStatus[]
+  created_at: string
+  updated_at: string
+}
+
+export interface OrderItem {
+  id: number
+  product_variant_id?: number
+  is_snapshot: boolean
+  quantity: number
+  price: number
+  confirmed_quantity?: number
+  confirmed_price?: number
+  line_total: number
+}
+
+export interface ClientStatus {
+  id: number
+  order_id: number
+  qualification_id: number
+  qualification_name?: string
+  sub_qualification_id?: number
+  sub_qualification_name?: string
+  comment: string
+  date_time: string
+  created_at: string
+}
+
+export interface Qualification {
+  id: number
+  company_id: number
+  name: string
+  parent_id?: number
+  parent_name?: string
+  color: string
+  is_order_history: boolean
+  sub_qualifications?: Qualification[]
+  created_at: string
+  updated_at: string
+}
+
+export interface ShopifyWebhookConfig {
+  id: number
+  company_id: number
+  store_domain: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface WooCommerceWebhookConfig {
+  id: number
+  company_id: number
+  store_url: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+// Order request types
+export interface CreateOrderRequest {
+  customer_full_name: string
+  customer_phone: string
+  customer_phone2?: string
+  customer_address: string
+  customer_state: string
+  customer_comments?: string
+  items: CreateOrderItemRequest[]
+  discount?: number
+}
+
+export interface CreateOrderItemRequest {
+  product_variant_id?: number
+  quantity: number
+  price: number
+}
+
+export interface UpdateOrderRequest {
+  customer_full_name?: string
+  customer_phone?: string
+  customer_phone2?: string
+  customer_address?: string
+  customer_state?: string
+  customer_comments?: string
+  discount?: number
+}
+
+export interface ConfirmOrderRequest {
+  shipping_provider: string
+  delivery_type: DeliveryType
+  commune_id?: number
+  center_id?: number
+  second_delivery_cost: number
+  items: ConfirmOrderItemRequest[]
+}
+
+export interface ConfirmOrderItemRequest {
+  id: number
+  confirmed_quantity?: number
+  confirmed_price?: number
+}
+
+export interface UpdateOrderStatusRequest {
+  status: OrderStatus
+}
+
+export interface CreateClientStatusRequest {
+  qualification_id: number
+  sub_qualification_id?: number
+  comment?: string
+  date_time?: string
+}
+
+export interface CreateQualificationRequest {
+  name: string
+  parent_id?: number
+  color: string
+  is_order_history?: boolean
+}
+
+export interface UpdateQualificationRequest {
+  name?: string
+  parent_id?: number
+  color?: string
+  is_order_history?: boolean
+}
+
+export interface CreateShopifyWebhookConfigRequest {
+  store_domain: string
+  webhook_secret: string
+  is_active?: boolean
+}
+
+export interface UpdateShopifyWebhookConfigRequest {
+  store_domain?: string
+  webhook_secret?: string
+  is_active?: boolean
+}
+
+export interface CreateWooCommerceWebhookConfigRequest {
+  store_url: string
+  webhook_secret: string
+  is_active?: boolean
+}
+
+export interface UpdateWooCommerceWebhookConfigRequest {
+  store_url?: string
+  webhook_secret?: string
+  is_active?: boolean
+}
+
+export interface ListOrdersResponse {
+  orders: Order[]
+  total: number
+  page: number
+  limit: number
+}
+
+export interface OrderFilters {
+  status?: OrderStatus
+  source?: OrderSource
+  date_from?: string
+  date_to?: string
+  page?: number
+  limit?: number
 }
 
 

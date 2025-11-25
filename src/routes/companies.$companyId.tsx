@@ -257,6 +257,7 @@ function CompanyDetailsPage() {
   const handleSubmitYalidineConfig = async (data: {
     api_id: string
     api_token?: string
+    from_wilaya_id?: number | null
     is_active?: boolean
   }) => {
     try {
@@ -269,6 +270,9 @@ function CompanyDetailsPage() {
         if (data.api_token) {
           updateData.api_token = data.api_token
         }
+        if (data.from_wilaya_id !== undefined) {
+          updateData.from_wilaya_id = data.from_wilaya_id
+        }
         await apiClient.yalidineConfigs.update(companyIdNum, yalidineConfigToEdit.id, updateData)
         queryClient.invalidateQueries({ queryKey: ['companies', companyIdNum, 'yalidine-configs'] })
         toast.success('Yalidine config updated successfully')
@@ -279,6 +283,7 @@ function CompanyDetailsPage() {
         const createData: CreateYalidineConfigRequest = {
           api_id: data.api_id,
           api_token: data.api_token || '',
+          from_wilaya_id: data.from_wilaya_id ?? null,
           is_active: data.is_active,
         }
         await createYalidineConfig.mutateAsync(createData)

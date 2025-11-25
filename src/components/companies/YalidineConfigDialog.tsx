@@ -9,6 +9,7 @@ interface YalidineConfigDialogProps {
   onSubmit: (data: {
     api_id: string
     api_token?: string
+    from_wilaya_id?: number | null
     is_active?: boolean
   }) => void
   isLoading?: boolean
@@ -28,6 +29,7 @@ export function YalidineConfigDialog({
   const handleSubmit = (data: {
     api_id: string
     api_token?: string
+    from_wilaya_id?: number | null
     is_active?: boolean
   }) => {
     onSubmit(data)

@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Trash2, Edit, Star, StarOff } from 'lucide-react'
 import type { YalidineConfigResponse } from '@/types/api'
+import { useYalidineWilayas } from '@/hooks/queries/use-yalidine-api'
+import { useSelectedCompany } from '@/hooks/use-selected-company'
 
 interface YalidineConfigListProps {
   configs: YalidineConfigResponse[]
@@ -17,6 +19,11 @@ export function YalidineConfigList({
   onDelete,
   onSetDefault,
 }: YalidineConfigListProps) {
+  const { selectedCompany } = useSelectedCompany()
+  const companyId = selectedCompany?.id || 0
+  const { data: wilayasData } = useYalidineWilayas(companyId)
+  const wilayas = wilayasData?.data || []
+
   if (configs.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
@@ -33,12 +40,20 @@ export function YalidineConfigList({
     return `${apiId.substring(0, 4)}${'•'.repeat(Math.max(0, apiId.length - 8))}${apiId.substring(apiId.length - 4)}`
   }
 
+  // Helper function to get wilaya name by ID
+  const getWilayaName = (wilayaId?: number | null) => {
+    if (!wilayaId) return 'Not set'
+    const wilaya = wilayas.find((w) => w.id === wilayaId)
+    return wilaya?.name || `Wilaya #${wilayaId}`
+  }
+
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>API ID</TableHead>
+            <TableHead>Origin Wilaya</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Default</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -49,6 +64,11 @@ export function YalidineConfigList({
             <TableRow key={config.id}>
               <TableCell className="font-medium font-mono text-sm">
                 {maskApiId(config.api_id)}
+              </TableCell>
+              <TableCell>
+                <span className="text-sm">
+                  {getWilayaName(config.from_wilaya_id)}
+                </span>
               </TableCell>
               <TableCell>
                 <Badge variant={config.is_active ? 'default' : 'secondary'}>

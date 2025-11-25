@@ -13,7 +13,8 @@ import {
   ShoppingCart,
   Settings,
   Users,
-  FileText
+  FileText,
+  ShoppingBag
 } from 'lucide-react'
 
 const globalNavigation = [
@@ -44,6 +45,7 @@ const getCompanyNavigationSections = (companyId: number): NavigationSection[] =>
   {
     title: 'Operations',
     items: [
+      { name: 'Orders', to: `/companies/${companyId}/orders`, icon: ShoppingBag },
       { name: 'Franchises', to: `/companies/${companyId}/franchises`, icon: Store },
       { name: 'Warehouse Bills', to: `/companies/${companyId}/warehouse-bills`, icon: FileText },
       { name: 'POS', to: `/companies/${companyId}/pos`, icon: ShoppingCart },

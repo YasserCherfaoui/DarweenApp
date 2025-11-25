@@ -11,6 +11,15 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
+import { useYalidineWilayas } from '@/hooks/queries/use-yalidine-api'
+import { useSelectedCompany } from '@/hooks/use-selected-company'
 import type { YalidineConfig } from '@/types/api'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AlertCircle, CheckCircle2, XCircle } from 'lucide-react'
@@ -24,6 +33,7 @@ const cn = (...classes: (string | boolean | undefined)[]) => {
 const yalidineConfigSchema = z.object({
   api_id: z.string().min(1, { message: 'API ID is required' }),
   api_token: z.string().optional(),
+  from_wilaya_id: z.number().nullable().optional(),
   is_active: z.boolean().default(true),
 })
 
@@ -34,6 +44,7 @@ interface YalidineConfigFormProps {
   onSubmit: (data: {
     api_id: string
     api_token?: string
+    from_wilaya_id?: number | null
     is_active?: boolean
   }) => void
   isLoading?: boolean
@@ -46,15 +57,22 @@ export function YalidineConfigForm({
   isLoading,
   submitLabel = 'Save',
 }: YalidineConfigFormProps) {
+  const { selectedCompany } = useSelectedCompany()
+  const companyId = selectedCompany?.id || 0
+  const { data: wilayasData } = useYalidineWilayas(companyId)
+
   const form = useForm<FormValues>({
     resolver: zodResolver(yalidineConfigSchema),
     defaultValues: {
       api_id: initialData?.api_id || '',
       api_token: '',
+      from_wilaya_id: initialData?.from_wilaya_id ?? null,
       is_active: initialData?.is_active ?? true,
     },
     mode: 'onChange',
   })
+
+  const wilayas = wilayasData?.data || []
 
   // Helper to get field validation state
   const getFieldState = (fieldName: keyof FormValues) => {
@@ -90,6 +108,7 @@ export function YalidineConfigForm({
     onSubmit({
       api_id: values.api_id,
       api_token: values.api_token || undefined,
+      from_wilaya_id: values.from_wilaya_id ?? null,
       is_active: values.is_active,
     })
   }
@@ -183,6 +202,50 @@ export function YalidineConfigForm({
                 {initialData 
                   ? 'Leave blank to keep the current API token unchanged'
                   : 'Your Yalidine API Token. Keep this secure and never share it.'}
+              </FormDescription>
+              <FormMessage className="text-red-600 font-medium" />
+            </FormItem>
+          )}
+        />
+
+        {/* From Wilaya ID Field */}
+        <FormField
+          control={form.control}
+          name="from_wilaya_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex items-center justify-between">
+                <span>Origin Wilaya (From Wilaya)</span>
+                {field.value && getValidationIcon('from_wilaya_id')}
+              </FormLabel>
+              <FormControl>
+                <Select
+                  value={field.value?.toString() || ''}
+                  onValueChange={(value) => {
+                    field.onChange(value ? parseInt(value) : null)
+                  }}
+                  disabled={isLoading || !companyId}
+                >
+                  <SelectTrigger
+                    className={cn(
+                      getFieldState('from_wilaya_id') === 'error' && 'border-red-500 focus-visible:ring-red-500',
+                      getFieldState('from_wilaya_id') === 'success' && 'border-green-500 focus-visible:ring-green-500'
+                    )}
+                  >
+                    <SelectValue placeholder="Select origin wilaya (where you ship from)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None (Optional)</SelectItem>
+                    {wilayas.map((wilaya) => (
+                      <SelectItem key={wilaya.id} value={wilaya.id.toString()}>
+                        {wilaya.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormDescription>
+                Select the wilaya (state) where your company ships from. This is required for calculating delivery fees using the Yalidine fees API.
               </FormDescription>
               <FormMessage className="text-red-600 font-medium" />
             </FormItem>
