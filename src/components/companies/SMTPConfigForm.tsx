@@ -44,7 +44,7 @@ const smtpConfigSchema = z.object({
     const num = Number(val)
     return !isNaN(num) && num >= 1
   }, { message: 'Rate limit must be at least 1' }),
-  is_active: z.boolean().optional().default(true),
+  is_active: z.boolean(),
 })
 
 type FormValues = z.infer<typeof smtpConfigSchema>

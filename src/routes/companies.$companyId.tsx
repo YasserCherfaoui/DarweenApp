@@ -57,7 +57,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useSelectedCompany } from '@/hooks/use-selected-company'
 import { apiClient } from '@/lib/api-client'
 import { rootRoute } from '@/main'
-import type { AddUserToCompanyResponse, CreateSMTPConfigRequest, CreateShopifyWebhookConfigRequest, CreateWooCommerceWebhookConfigRequest, CreateYalidineConfigRequest, Role, SMTPConfigResponse, SMTPSecurityType, ShopifyWebhookConfig, UpdateSMTPConfigRequest, UpdateShopifyWebhookConfigRequest, UpdateWooCommerceWebhookConfigRequest, UpdateYalidineConfigRequest, UserWithRole, WooCommerceWebhookConfig, YalidineConfigResponse } from '@/types/api'
+import type { AddUserToCompanyResponse, CreateSMTPConfigRequest, CreateShopifyWebhookConfigRequest, CreateWooCommerceWebhookConfigRequest, CreateYalidineConfigRequest, SMTPConfigResponse, SMTPSecurityType, ShopifyWebhookConfig, UpdateSMTPConfigRequest, UpdateShopifyWebhookConfigRequest, UpdateWooCommerceWebhookConfigRequest, UpdateYalidineConfigRequest, UserRole, UserWithRole, WooCommerceWebhookConfig, YalidineConfigResponse } from '@/types/api'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, createRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Edit, Mail, Package, Plus, Store, TestTube, Truck, Users, Warehouse } from 'lucide-react'
@@ -142,7 +142,7 @@ function CompanyDetailsPage() {
 
   const handleAddUser = async (data: { email: string; role: string }) => {
     try {
-      const response = await addUserMutation.mutateAsync({ email: data.email, role: data.role as Role })
+      const response = await addUserMutation.mutateAsync({ email: data.email, role: data.role as UserRole })
       setAddUserDialogOpen(false)
       
       // If user was created, show credentials dialog

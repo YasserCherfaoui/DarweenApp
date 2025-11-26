@@ -38,7 +38,7 @@ const emailSchema = z.object({
   ),
   subject: z.string().min(1, 'Subject is required'),
   body: z.string().optional(),
-  is_html: z.boolean().optional().default(true),
+  is_html: z.boolean(),
 })
 
 type EmailFormValues = z.infer<typeof emailSchema>

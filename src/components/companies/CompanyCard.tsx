@@ -34,7 +34,7 @@ export function CompanyCard({ company }: CompanyCardProps) {
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
           {company.description || 'No description provided'}
         </p>
-        <Link to={`/companies/${company.id}`}>
+        <Link to={`/companies/${company.id}` as any}>
           <Button variant="outline" className="w-full">
             View Details
             <ArrowRight className="ml-2 h-4 w-4" />

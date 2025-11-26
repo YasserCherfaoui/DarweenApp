@@ -34,7 +34,7 @@ const yalidineConfigSchema = z.object({
   api_id: z.string().min(1, { message: 'API ID is required' }),
   api_token: z.string().optional(),
   from_wilaya_id: z.number().nullable().optional(),
-  is_active: z.boolean().optional().default(true),
+  is_active: z.boolean(),
 })
 
 type FormValues = z.infer<typeof yalidineConfigSchema>
