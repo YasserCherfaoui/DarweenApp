@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 import { federation } from '@module-federation/vite'
 import { fileURLToPath, URL } from 'node:url'
-import federationConfig from './module-federation.config.js'
+import federationConfig from './module-federation.config'
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {

@@ -397,6 +397,12 @@ export interface AddUserToCompanyResponse {
   credentials?: UserCredentials
 }
 
+export interface AddUserToFranchiseResponse {
+  user_created: boolean
+  email_sent: boolean
+  credentials?: UserCredentials
+}
+
 export interface UpdateUserRoleRequest {
 	role: UserRole
 }
