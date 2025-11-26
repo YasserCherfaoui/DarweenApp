@@ -51,7 +51,7 @@ export function WarehouseBillTable({
   bills,
   companyId,
   franchiseId,
-  onView,
+  onView: _onView,
 }: WarehouseBillTableProps) {
   return (
     <Table>
@@ -105,11 +105,12 @@ export function WarehouseBillTable({
                   {companyId && (
                     <>
                       <Link
-                        to="/companies/$companyId/warehouse-bills/$billId"
+                        to={"/companies/$companyId/warehouse-bills/$billId" as any}
                         params={{
                           companyId: companyId.toString(),
                           billId: bill.id.toString(),
-                        }}
+                        } as any}
+                        search={{ highlightedItemId: undefined } as any}
                       >
                         <Button variant="outline" size="sm">
                           <Eye className="h-4 w-4" />

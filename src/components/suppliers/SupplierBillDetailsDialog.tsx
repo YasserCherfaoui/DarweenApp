@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -12,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { useSupplierBill } from '@/hooks/queries/use-supplier-bills'
 import { BillItemList } from './BillItemList'
 import { Link } from '@tanstack/react-router'
-import { Pencil, Trash2, DollarSign } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 
 interface SupplierBillDetailsDialogProps {
   companyId: number

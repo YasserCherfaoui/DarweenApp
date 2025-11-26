@@ -1,4 +1,4 @@
-import React from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -20,7 +20,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Download, CheckCircle2, AlertCircle, Loader2, X, Plus, ChevronsUpDown, Check } from 'lucide-react'
+import { Download, CheckCircle2, AlertCircle, Loader2, X, ChevronsUpDown, Check } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { apiClient } from '@/lib/api-client'
 import type { Product, ProductVariant } from '@/types/api'
@@ -102,13 +102,13 @@ export function GenerateBulkLabelsDialogEnhanced({
   companyId,
   products,
 }: GenerateBulkLabelsDialogEnhancedProps) {
-  const [isGenerating, setIsGenerating] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
-  const [success, setSuccess] = React.useState(false)
-  const [selectedVariants, setSelectedVariants] = React.useState<SelectedVariant[]>([])
-  const [comboboxOpen, setComboboxOpen] = React.useState(false)
-  const [allVariants, setAllVariants] = React.useState<VariantWithProduct[]>([])
-  const [isLoadingVariants, setIsLoadingVariants] = React.useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const [selectedVariants, setSelectedVariants] = useState<SelectedVariant[]>([])
+  const [comboboxOpen, setComboboxOpen] = useState(false)
+  const [allVariants, setAllVariants] = useState<VariantWithProduct[]>([])
+  const [isLoadingVariants, setIsLoadingVariants] = useState(false)
 
   const form = useForm<BulkLabelFormValues>({
     resolver: zodResolver(bulkLabelSchema),
@@ -122,7 +122,7 @@ export function GenerateBulkLabelsDialogEnhanced({
   })
 
   // Fetch all variants when dialog opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (open && products.length > 0) {
       fetchAllVariants()
     }
@@ -134,7 +134,7 @@ export function GenerateBulkLabelsDialogEnhanced({
       const variantsPromises = products.map(async (product) => {
         try {
           const response = await apiClient.productVariants.list(companyId, product.id)
-          return response.data.map((variant: ProductVariant) => ({
+          return response?.data?.map((variant: ProductVariant) => ({
             ...variant,
             parent_product_name: product.name,
           }))
@@ -144,7 +144,7 @@ export function GenerateBulkLabelsDialogEnhanced({
       })
 
       const variantsArrays = await Promise.all(variantsPromises)
-      const flatVariants = variantsArrays.flat()
+      const flatVariants = variantsArrays.flat().filter((v): v is typeof v & { parent_product_name: string } => v !== undefined)
       setAllVariants(flatVariants)
     } catch (err) {
       console.error('Failed to fetch variants:', err)

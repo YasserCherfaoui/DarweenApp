@@ -121,7 +121,7 @@ function CompanyInventoryPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to={`/companies/${companyId}`}>
+            <Link to={`/companies/${companyId}` as any}>
               <Button variant="ghost">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back

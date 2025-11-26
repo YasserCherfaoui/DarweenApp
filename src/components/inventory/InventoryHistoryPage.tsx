@@ -48,7 +48,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Dot,
 } from 'recharts'
 
 interface InventoryHistoryPageProps {
@@ -277,7 +276,8 @@ export function InventoryHistoryPage({ inventory, companyId }: InventoryHistoryP
       if (!isNaN(billId) && inventory?.product_variant_id) {
         try {
           const billResponse = await apiClient.suppliers.bills.getById(companyId, billId)
-          const bill: SupplierBill = billResponse.data
+          const bill: SupplierBill | undefined = billResponse.data
+          if (!bill) return
 
           const matchingItem = bill.items?.find(
             (item) => item.product_variant_id === inventory.product_variant_id
@@ -305,7 +305,7 @@ export function InventoryHistoryPage({ inventory, companyId }: InventoryHistoryP
         try {
           // Fetch the warehouse bill to find matching item
           const billResponse = await apiClient.warehouseBills.getByCompany(companyId, billId)
-          const bill: WarehouseBill = billResponse.data
+          const bill: WarehouseBill | undefined = billResponse.data
 
           if (!bill) {
             return
@@ -477,7 +477,7 @@ export function InventoryHistoryPage({ inventory, companyId }: InventoryHistoryP
                           </div>
                         )
                       }
-                      return null
+                      return <g />
                     }}
                   />
                   <Legend />
@@ -486,48 +486,46 @@ export function InventoryHistoryPage({ inventory, companyId }: InventoryHistoryP
                     dataKey="stock"
                     stroke="var(--chart-1)"
                     strokeWidth={2}
-                    dot={(props: any) => {
+                    dot={((props: any) => {
                       const { cx, cy, payload } = props
                       const isClickable = payload?.isClickable
-                      if (!cx || !cy) return null
+                      if (!cx || !cy) return false
                       
                       return (
-                        <g>
-                          <circle
-                            cx={cx}
-                            cy={cy}
-                            r={isClickable ? 8 : 4}
-                            fill={isClickable ? 'var(--chart-1)' : 'var(--chart-1)'}
-                            stroke={isClickable ? '#fff' : 'none'}
-                            strokeWidth={isClickable ? 2 : 0}
-                            opacity={isClickable ? 1 : 0.7}
-                            style={{ 
-                              cursor: isClickable ? 'pointer' : 'default',
-                              pointerEvents: 'all'
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              e.preventDefault()
-                              if (isClickable && payload?.movement) {
-                                handleMovementClick(payload.movement)
-                              }
-                            }}
-                            onMouseEnter={(e) => {
-                              if (isClickable) {
-                                e.currentTarget.style.cursor = 'pointer'
-                                e.currentTarget.setAttribute('r', '10')
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              if (isClickable) {
-                                e.currentTarget.setAttribute('r', '8')
-                              }
-                            }}
-                          />
-                        </g>
+                        <circle
+                          cx={cx}
+                          cy={cy}
+                          r={isClickable ? 8 : 4}
+                          fill={isClickable ? 'var(--chart-1)' : 'var(--chart-1)'}
+                          stroke={isClickable ? '#fff' : 'none'}
+                          strokeWidth={isClickable ? 2 : 0}
+                          opacity={isClickable ? 1 : 0.7}
+                          style={{ 
+                            cursor: isClickable ? 'pointer' : 'default',
+                            pointerEvents: 'all'
+                          }}
+                          onClick={(e: React.MouseEvent<SVGCircleElement>) => {
+                            e.stopPropagation()
+                            e.preventDefault()
+                            if (isClickable && payload?.movement) {
+                              handleMovementClick(payload.movement)
+                            }
+                          }}
+                          onMouseEnter={(e: React.MouseEvent<SVGCircleElement>) => {
+                            if (isClickable) {
+                              e.currentTarget.style.cursor = 'pointer'
+                              e.currentTarget.setAttribute('r', '10')
+                            }
+                          }}
+                          onMouseLeave={(e: React.MouseEvent<SVGCircleElement>) => {
+                            if (isClickable) {
+                              e.currentTarget.setAttribute('r', '8')
+                            }
+                          }}
+                        />
                       )
-                    }}
-                    activeDot={(props: any) => {
+                    }) as any}
+                    activeDot={((props: any) => {
                       const { cx, cy, payload } = props
                       const isClickable = payload?.isClickable
                       if (!cx || !cy) return null
@@ -566,16 +564,7 @@ export function InventoryHistoryPage({ inventory, companyId }: InventoryHistoryP
                           />
                         </g>
                       )
-                    }}
-                    onClick={(data: any, index: number) => {
-                      // Handle click on the line or dots
-                      if (data && stockChartData[index]) {
-                        const chartData = stockChartData[index]
-                        if (chartData.movement && chartData.isClickable) {
-                          handleMovementClick(chartData.movement)
-                        }
-                      }
-                    }}
+                    }) as any}
                     name="Stock Level"
                   />
                 </LineChart>

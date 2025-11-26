@@ -11,13 +11,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Building2, Check, ChevronDown, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 export function CompanySelector() {
   const { selectedCompany } = useStore(companyStore)
   const { data: companies, isLoading } = useCompanies()
 
-  const handleSelectCompany = (company: typeof companies[0]) => {
+  const handleSelectCompany = (company: NonNullable<typeof companies>[0]) => {
     // TODO: Backend should include user_role in the company response based on UserCompanyRole
     // For now, if no role is provided, default to 'admin' for testing
     // In production, the backend API should return the user's role for each company

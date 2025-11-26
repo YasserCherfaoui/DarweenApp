@@ -187,7 +187,7 @@ function CompanyFranchisePage() {
             <p className="text-gray-500 mb-6">
               The franchise you're looking for doesn't exist or you don't have access to it.
             </p>
-            <Link to={`/companies/${companyId}/franchises`}>
+            <Link to={`/companies/${companyId}/franchises` as any}>
               <Button>Back to Franchises</Button>
             </Link>
           </div>
@@ -220,7 +220,7 @@ function CompanyFranchisePage() {
               </p>
             </div>
           </div>
-          <Link to={`/companies/${companyId}/franchises/${franchiseId}/edit`}>
+          <Link to={`/companies/${companyId}/franchises/${franchiseId}/edit` as any}>
             <Button>
               <Edit className="mr-2 h-4 w-4" />
               Edit Franchise
@@ -281,7 +281,7 @@ function CompanyFranchisePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Link to={`/companies/${companyId}/franchises/${franchiseId}/inventory`}>
+                <Link to={`/companies/${companyId}/franchises/${franchiseId}/inventory` as any}>
                   <Button variant="outline" className="w-full">
                     View Inventory
                   </Button>
@@ -305,12 +305,12 @@ function CompanyFranchisePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Link to={`/franchises/${franchiseId}/warehouse-bills`}>
+                <Link to={`/franchises/${franchiseId}/warehouse-bills` as any}>
                   <Button variant="outline" className="w-full">
                     View Entry Bills
                   </Button>
                 </Link>
-                <Link to={`/companies/${companyId}/franchises/${franchiseId}/warehouse-bills/entry/new`}>
+                <Link to={`/companies/${companyId}/franchises/${franchiseId}/warehouse-bills/entry/new` as any}>
                   <Button variant="outline" className="w-full">
                     Create Entry Bill
                   </Button>

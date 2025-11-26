@@ -4,7 +4,7 @@ import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
 import { Button } from '@/components/ui/button'
 import { Loading } from '@/components/ui/loading'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, ArrowLeft, Eye, DollarSign } from 'lucide-react'
+import { Plus, ArrowLeft, DollarSign } from 'lucide-react'
 import { SupplierBillTable } from '@/components/suppliers/SupplierBillTable'
 import { SupplierBillDetailsDialog } from '@/components/suppliers/SupplierBillDetailsDialog'
 import { SupplierOutstandingBalanceCard } from '@/components/suppliers/SupplierOutstandingBalanceCard'
@@ -14,7 +14,6 @@ import { useSupplierOutstandingBalance } from '@/hooks/queries/use-supplier-bill
 import { useSupplier } from '@/hooks/queries/use-suppliers'
 import type { SupplierBill } from '@/types/api'
 import { rootRoute } from '@/main'
-import { useToast } from '@/hooks/use-toast'
 
 export const SupplierBillsIndexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -27,7 +26,6 @@ function SupplierBillsPage() {
   const companyIdNum = parseInt(companyId)
   const supplierIdNum = parseInt(supplierId)
   const navigate = useNavigate()
-  const { toast } = useToast()
   
   const [page, setPage] = useState(1)
   const [limit] = useState(20)
@@ -88,7 +86,7 @@ function SupplierBillsPage() {
             </Button>
             <div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Supplier Bills - {supplier?.data?.name || 'Supplier'}
+                Supplier Bills - {supplier?.name || 'Supplier'}
               </h1>
               <p className="text-gray-500 dark:text-gray-400 mt-2">
                 Manage bills and payments for this supplier
@@ -100,7 +98,7 @@ function SupplierBillsPage() {
               <DollarSign className="mr-2 h-4 w-4" />
               Record Payment
             </Button>
-            <Link to={`/companies/${companyId}/suppliers/${supplierId}/bills/new`}>
+            <Link to={`/companies/${companyId}/suppliers/${supplierId}/bills/new` as any}>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 New Bill

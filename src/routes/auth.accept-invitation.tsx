@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { rootRoute } from '@/main'
 import { useForm } from '@tanstack/react-form'
-import { createRoute, useNavigate, useSearch } from '@tanstack/react-router'
+import { createRoute, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { useState, useEffect } from 'react'
 import { apiClient } from '@/lib/api-client'
@@ -102,7 +102,7 @@ function AcceptInvitationPage() {
             email: email || response.data.user?.email || '',
             password: value.password,
           })
-          navigate({ to: '/dashboard' })
+          navigate({ to: '/dashboard' as any })
         }
       } catch (err: any) {
         setError(err.message || 'Failed to accept invitation. Please try again.')

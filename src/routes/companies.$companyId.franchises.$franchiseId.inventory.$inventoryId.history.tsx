@@ -38,8 +38,8 @@ function FranchiseInventoryHistoryPage() {
             size="sm"
             onClick={() =>
               navigate({
-                to: '/companies/$companyId/franchises/$franchiseId/inventory',
-                params: { companyId, franchiseId },
+                to: '/companies/$companyId/franchises/$franchiseId/inventory' as any,
+                params: { companyId, franchiseId } as any,
               })
             }
           >
@@ -61,8 +61,8 @@ function FranchiseInventoryHistoryPage() {
               className="mt-4"
               onClick={() =>
                 navigate({
-                  to: '/companies/$companyId/franchises/$franchiseId/inventory',
-                  params: { companyId, franchiseId },
+                  to: '/companies/$companyId/franchises/$franchiseId/inventory' as any,
+                  params: { companyId, franchiseId } as any,
                 })
               }
             >

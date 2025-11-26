@@ -47,8 +47,8 @@ function EditSupplierBillPage() {
       {
         onSuccess: () => {
           navigate({
-            to: '/companies/$companyId/suppliers/$supplierId/bills/$billId',
-            params: { companyId, supplierId, billId },
+            to: '/companies/$companyId/suppliers/$supplierId/bills/$billId' as any,
+            params: { companyId, supplierId, billId } as any,
           })
         },
         onError: (error: any) => {
@@ -94,10 +94,10 @@ function EditSupplierBillPage() {
             <Button
               className="mt-4"
               onClick={() =>
-                navigate({
-                  to: '/companies/$companyId/suppliers/$supplierId/bills/$billId',
-                  params: { companyId, supplierId, billId },
-                })
+          navigate({
+            to: '/companies/$companyId/suppliers/$supplierId/bills/$billId' as any,
+            params: { companyId, supplierId, billId } as any,
+          })
               }
             >
               View Bill Details
@@ -115,10 +115,10 @@ function EditSupplierBillPage() {
           <Button
             variant="ghost"
             onClick={() =>
-              navigate({
-                to: '/companies/$companyId/suppliers/$supplierId/bills/$billId',
-                params: { companyId, supplierId, billId },
-              })
+          navigate({
+            to: '/companies/$companyId/suppliers/$supplierId/bills/$billId' as any,
+            params: { companyId, supplierId, billId } as any,
+          })
             }
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -127,7 +127,7 @@ function EditSupplierBillPage() {
           <div>
             <h1 className="text-3xl font-bold">Edit Supplier Bill</h1>
             <p className="text-muted-foreground">
-              Edit bill #{bill.bill_number} for {supplier?.data?.name || 'supplier'}
+              Edit bill #{bill.bill_number} for {supplier?.name || 'supplier'}
             </p>
           </div>
         </div>

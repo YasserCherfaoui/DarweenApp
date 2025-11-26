@@ -12,7 +12,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -22,15 +21,10 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Download, CheckCircle2, AlertCircle, Loader2, X } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Download, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import { apiClient } from '@/lib/api-client'
 import type { Product, ProductVariant } from '@/types/api'
 
-// Utility function for className merging
-const cn = (...classes: (string | boolean | undefined)[]) => {
-  return classes.filter(Boolean).join(' ')
-}
 
 // Zod validation schema
 const bulkLabelSchema = z.object({

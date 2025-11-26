@@ -43,7 +43,7 @@ function FranchiseNewSalePage() {
   const [completedSale, setCompletedSale] = useState<Sale | undefined>()
 
   const { data: franchiseData } = useFranchise(Number(franchiseId))
-  const franchise = franchiseData?.data
+  const franchise = franchiseData
   const companyId = franchise?.parent_company_id
   
   const createSale = useCreateSale()
@@ -179,8 +179,7 @@ function FranchiseNewSalePage() {
         },
       },
       {
-        onSuccess: (saleResponse) => {
-          const sale = saleResponse.data
+        onSuccess: (sale) => {
           if (!sale) {
             toast({
               title: 'Sale created',

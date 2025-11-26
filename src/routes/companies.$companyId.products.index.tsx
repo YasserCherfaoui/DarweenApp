@@ -62,7 +62,7 @@ function CompanyProductsPage() {
                 Manage your products and inventory
               </p>
             </div>
-            <Link to={`/companies/${companyId}/products/create`}>
+            <Link to={`/companies/${companyId}/products/create` as any}>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 New Product
@@ -91,7 +91,7 @@ function CompanyProductsPage() {
               <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
                 Start by adding your first product. You can then create variants with different sizes, colors, and prices.
               </p>
-              <Link to={`/companies/${companyId}/products/create`}>
+              <Link to={`/companies/${companyId}/products/create` as any}>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Your First Product

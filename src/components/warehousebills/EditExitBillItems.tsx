@@ -16,7 +16,6 @@ import { Trash2, Plus, Save, X } from 'lucide-react'
 import { ProductSearch } from '@/components/pos/ProductSearch'
 import type {
   WarehouseBill,
-  WarehouseBillItem,
   UpdateExitBillItemsRequest,
   UpdateExitBillItemRequest,
   ProductVariant,
@@ -152,7 +151,7 @@ export function EditExitBillItems({
         data: updateRequest,
       })
       if (updatedBill) {
-        onSave(updatedBill)
+        onSave()
       }
     } catch (error) {
       // Error is handled by the hook (toast notification)

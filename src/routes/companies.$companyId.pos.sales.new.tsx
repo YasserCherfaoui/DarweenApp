@@ -171,8 +171,7 @@ function NewSalePage() {
         },
       },
       {
-        onSuccess: (saleResponse) => {
-          const sale = saleResponse.data
+        onSuccess: (sale) => {
           if (!sale) {
             toast({
               title: 'Sale created',
@@ -338,7 +337,7 @@ function NewSalePage() {
             }
           }}
           sale={completedSale}
-          companyName={companyData?.data?.name || 'Company'}
+          companyName={companyData?.name || 'Company'}
         />
       )}
       </div>

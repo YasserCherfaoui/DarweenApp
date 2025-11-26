@@ -11,8 +11,6 @@ import {
   LayoutDashboard,
   Truck,
   ShoppingCart,
-  Settings,
-  Users,
   FileText,
   ShoppingBag
 } from 'lucide-react'
@@ -73,7 +71,7 @@ const getFranchiseNavigationSections = (franchiseId: number): NavigationSection[
 export function Sidebar() {
   const router = useRouterState()
   const currentPath = router.location.pathname
-  const { selectedPortal, selectedPortalType, selectedPortalId } = useStore(portalStore)
+  const { selectedPortalType, selectedPortalId } = useStore(portalStore)
   const { isCollapsed } = useStore(sidebarStore)
 
   const companyNavigationSections = 

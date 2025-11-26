@@ -122,7 +122,6 @@ export function OrderStatusCounters({
   const statusCards = useMemo(() => {
     return statusConfigs.map((config) => {
       const count = counts?.[config.status] || 0
-      const Icon = config.icon
 
       return {
         ...config,

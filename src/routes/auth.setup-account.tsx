@@ -5,12 +5,12 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { rootRoute } from '@/main'
 import { useForm } from '@tanstack/react-form'
-import { createRoute, useNavigate, useSearch } from '@tanstack/react-router'
+import { createRoute, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { useState, useEffect } from 'react'
 import { apiClient } from '@/lib/api-client'
 import { useAuth } from '@/hooks/use-auth'
-import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 
 const setupAccountSchema = z.object({
   code: z.coerce.string().length(6, 'OTP code must be 6 digits'),
@@ -119,7 +119,7 @@ function SetupAccountPage() {
             email: value.email,
             password: value.password,
           })
-          navigate({ to: '/dashboard' })
+          navigate({ to: '/dashboard' as any })
         }
       } catch (err: any) {
         setError(err.message || 'Failed to complete account setup. Please try again.')

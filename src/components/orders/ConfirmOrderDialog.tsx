@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -54,7 +54,7 @@ interface VariantSelectorItemProps {
 }
 
 function VariantSelectorItem({
-  index,
+  index: _index,
   item,
   orderItem,
   selectedVariant,
@@ -198,7 +198,7 @@ export function ConfirmOrderDialog({
   const [customerPhone, setCustomerPhone] = useState('')
   const [customerPhone2, setCustomerPhone2] = useState('')
   const [customerAddress, setCustomerAddress] = useState('')
-  const [customerState, setCustomerState] = useState('')
+  const [_customerState, setCustomerState] = useState('')
   const [customerComments, setCustomerComments] = useState('')
   const [discount, setDiscount] = useState(0)
 
@@ -208,7 +208,7 @@ export function ConfirmOrderDialog({
   // Fetch Yalidine data
   const { data: wilayasData } = useYalidineWilayas(companyId)
   const { data: communesData } = useYalidineCommunes(companyId, shippingWilayaId)
-  const { data: centersData } = useYalidineCenters(companyId, shippingWilayaId)
+  const { data: _centersData } = useYalidineCenters(companyId, shippingWilayaId)
   const { data: yalidineConfigs } = useYalidineConfigs(companyId)
   const defaultYalidineConfig = useMemo(() => {
     return yalidineConfigs?.find((config) => config.is_default && config.is_active)
@@ -261,7 +261,7 @@ export function ConfirmOrderDialog({
       setItems(initialItems)
       
       // Initialize shipping fields
-      setShippingProvider(order.shipping_provider || 'yalidine')
+      setShippingProvider((order.shipping_provider === 'yalidine' || order.shipping_provider === 'my_delivery') ? order.shipping_provider : 'yalidine')
       setDeliveryType(order.delivery_type || 'home')
       setCommuneId(order.commune_id)
       setCenterId(order.center_id)
@@ -381,7 +381,6 @@ export function ConfirmOrderDialog({
 
   const wilayas = wilayasData?.data || []
   const communes = communesData?.data || []
-  const centers = centersData?.data || []
 
   if (!order) return null
 
@@ -631,11 +630,6 @@ export function ConfirmOrderDialog({
                       ? allVariants.find((v) => v.id === orderItem.product_variant_id)
                       : null
 
-                    // Get display value for the variant
-                    const getVariantDisplayValue = (variant: (ProductVariant & { product?: Product }) | null | undefined) => {
-                      if (!variant) return 'Select variant...'
-                      return `${variant.product?.name || ''} - ${variant.name}${variant.sku ? ` (${variant.sku})` : ''}`
-                    }
 
                     return (
                       <VariantSelectorItem
@@ -645,7 +639,7 @@ export function ConfirmOrderDialog({
                         orderItem={orderItem}
                         selectedVariant={selectedVariant}
                         allVariants={allVariants}
-                        onSelectVariant={(variant) => {
+                        onSelectVariant={(_variant) => {
                           // Note: In confirm dialog, we typically don't change the variant, just display it
                           // But we'll keep the structure for consistency
                         }}

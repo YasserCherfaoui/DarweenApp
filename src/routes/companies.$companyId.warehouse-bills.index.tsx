@@ -12,10 +12,7 @@ import {
 } from '@/components/warehousebills/WarehouseBillFilters'
 import {
   useWarehouseBills,
-  useCompleteExitBill,
-  useCancelWarehouseBill,
 } from '@/hooks/queries/use-warehouse-bills'
-import type { WarehouseBill } from '@/types/api'
 import { rootRoute } from '@/main'
 
 export const CompanyWarehouseBillsIndexRoute = createRoute({
@@ -63,7 +60,7 @@ function CompanyWarehouseBillsPage() {
               </p>
             </div>
           </div>
-          <Link to={`/companies/${companyId}/warehouse-bills/new`}>
+          <Link to="/companies/$companyId/warehouse-bills/new" params={{ companyId }}>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               New Exit Bill

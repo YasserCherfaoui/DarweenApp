@@ -2,19 +2,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import { apiClient } from '@/lib/api-client'
 import type {
-  Customer,
   CreateCustomerRequest,
   UpdateCustomerRequest,
-  Sale,
   CreateSaleRequest,
   AddPaymentRequest,
   ProcessRefundRequest,
-  CashDrawer,
   OpenCashDrawerRequest,
   CloseCashDrawerRequest,
   SalesReportRequest,
   PaginationParams,
-  ProductVariantSearchResponse,
 } from '@/types/api'
 
 // Product search queries for POS sales

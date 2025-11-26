@@ -64,10 +64,10 @@ function FranchiseCashDrawerPage() {
   }
 
   const handleCloseDrawer = (data: any) => {
-    if (!activeDrawer?.data) return
+    if (!activeDrawer) return
 
     closeDrawer.mutate(
-      { companyId: 0, drawerId: activeDrawer.data.id, data },
+      { companyId: 0, drawerId: activeDrawer.id, data },
       {
         onSuccess: () => {
           toast({
@@ -104,7 +104,7 @@ function FranchiseCashDrawerPage() {
             <p className="text-muted-foreground">Manage cash drawer operations</p>
           </div>
         </div>
-        {activeDrawer?.data ? (
+        {activeDrawer ? (
           <Button
             onClick={() => {
               setDialogType('close')
@@ -128,7 +128,7 @@ function FranchiseCashDrawerPage() {
         )}
       </div>
 
-      {activeDrawer?.data && (
+      {activeDrawer && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -136,19 +136,19 @@ function FranchiseCashDrawerPage() {
               Active Cash Drawer
             </CardTitle>
             <CardDescription>
-              Opened on {new Date(activeDrawer.data.opened_at).toLocaleString()}
+              Opened on {new Date(activeDrawer.opened_at).toLocaleString()}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Opening Balance</p>
-                <p className="text-2xl font-bold">${activeDrawer.data.opening_balance.toFixed(2)}</p>
+                <p className="text-2xl font-bold">${activeDrawer.opening_balance.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Expected Balance</p>
                 <p className="text-2xl font-bold">
-                  ${activeDrawer.data.expected_balance?.toFixed(2) || '0.00'}
+                  ${activeDrawer.expected_balance?.toFixed(2) || '0.00'}
                 </p>
               </div>
               <div>
@@ -157,7 +157,7 @@ function FranchiseCashDrawerPage() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Opened By</p>
-                <p className="text-lg font-medium">User #{activeDrawer.data.opened_by_id}</p>
+                <p className="text-lg font-medium">User #{activeDrawer.opened_by_id}</p>
               </div>
             </div>
           </CardContent>
@@ -242,7 +242,7 @@ function FranchiseCashDrawerPage() {
         onOpenChange={setDialogOpen}
         type={dialogType}
         onSubmit={dialogType === 'open' ? handleOpenDrawer : handleCloseDrawer}
-        activeDrawer={activeDrawer?.data}
+        activeDrawer={activeDrawer}
         isLoading={openDrawer.isPending || closeDrawer.isPending}
       />
       </div>

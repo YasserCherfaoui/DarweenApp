@@ -35,7 +35,7 @@ function SupplierDetailPage() {
   
   const { data: supplier, isLoading: isLoadingSupplier } = useSupplier(companyIdNum, supplierIdNum)
   const { data: supplierWithProducts, isLoading: isLoadingProducts } = useSupplierProducts(companyIdNum, supplierIdNum)
-  const { data: outstandingBalance } = useSupplierOutstandingBalance(companyIdNum, supplierIdNum)
+  const { data: _outstandingBalance } = useSupplierOutstandingBalance(companyIdNum, supplierIdNum)
   const deleteSupplier = useDeleteSupplier(companyIdNum)
 
   const handleDelete = async () => {
@@ -72,7 +72,7 @@ function SupplierDetailPage() {
               <p className="text-gray-500 mb-6">
                 The supplier you're looking for doesn't exist or has been deleted.
               </p>
-              <Link to={`/companies/${companyId}/suppliers`}>
+              <Link to={`/companies/${companyId}/suppliers` as any}>
                 <Button>Back to Suppliers</Button>
               </Link>
             </div>
@@ -105,7 +105,7 @@ function SupplierDetailPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Link to={`/companies/${companyId}/suppliers/${supplierId}/edit`}>
+            <Link to={`/companies/${companyId}/suppliers/${supplierId}/edit` as any}>
               <Button variant="outline">
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
@@ -231,13 +231,13 @@ function SupplierDetailPage() {
                     Create and manage bills from this supplier, track payments, and view payment history.
                   </p>
                 </div>
-                <Link to={`/companies/${companyId}/suppliers/${supplierId}/bills`}>
+                <Link to={`/companies/${companyId}/suppliers/${supplierId}/bills` as any}>
                   <Button className="w-full" variant="outline">
                     <FileText className="mr-2 h-4 w-4" />
                     View All Bills
                   </Button>
                 </Link>
-                <Link to={`/companies/${companyId}/suppliers/${supplierId}/bills/new`}>
+                <Link to={`/companies/${companyId}/suppliers/${supplierId}/bills/new` as any}>
                   <Button className="w-full">
                     <Receipt className="mr-2 h-4 w-4" />
                     Create New Bill
@@ -265,7 +265,7 @@ function SupplierDetailPage() {
                 {supplierWithProducts.products.map((product) => (
                   <Link
                     key={product.id}
-                    to={`/companies/${companyId}/products/${product.id}`}
+                    to={`/companies/${companyId}/products/${product.id}` as any}
                     className="flex items-center justify-between p-4 rounded-lg border hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   >
                     <div className="flex items-center gap-3">

@@ -12,12 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { useFranchiseSales } from '@/hooks/queries/use-pos-queries'
 import { Eye, ArrowLeft } from 'lucide-react'
@@ -147,7 +141,8 @@ function FranchiseSalesHistoryPage() {
 
       {selectedSale && (
         <SaleDetailsDialog
-          sale={selectedSale}
+          companyId={0}
+          saleId={selectedSale.id}
           open={detailsOpen}
           onOpenChange={setDetailsOpen}
         />

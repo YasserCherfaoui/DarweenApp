@@ -89,7 +89,7 @@ export function SupplierCard({ supplier, onDelete }: SupplierCardProps) {
 
           <div className="flex gap-2 pt-4 border-t">
             <Link
-              to={`/companies/${supplier.company_id}/suppliers/${supplier.id}`}
+              to={`/companies/${supplier.company_id}/suppliers/${supplier.id}` as any}
               className="flex-1"
             >
               <Button variant="outline" className="w-full">
@@ -97,7 +97,7 @@ export function SupplierCard({ supplier, onDelete }: SupplierCardProps) {
               </Button>
             </Link>
             <Link
-              to={`/companies/${supplier.company_id}/suppliers/${supplier.id}/edit`}
+              to={`/companies/${supplier.company_id}/suppliers/${supplier.id}/edit` as any}
             >
               <Button variant="outline" size="icon">
                 <Edit className="h-4 w-4" />

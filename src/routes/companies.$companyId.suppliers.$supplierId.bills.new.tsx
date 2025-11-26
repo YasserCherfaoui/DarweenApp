@@ -58,8 +58,8 @@ function NewSupplierBillPage() {
             variant="ghost"
             onClick={() =>
               navigate({
-                to: '/companies/$companyId/suppliers/$supplierId/bills',
-                params: { companyId, supplierId },
+                to: '/companies/$companyId/suppliers/$supplierId/bills' as any,
+                params: { companyId, supplierId } as any,
               })
             }
           >
@@ -69,7 +69,7 @@ function NewSupplierBillPage() {
           <div>
             <h1 className="text-3xl font-bold">New Supplier Bill</h1>
             <p className="text-muted-foreground">
-              Create a new bill for {supplier?.data?.name || 'supplier'}
+              Create a new bill for {supplier?.name || 'supplier'}
             </p>
           </div>
         </div>
@@ -77,7 +77,7 @@ function NewSupplierBillPage() {
         <SupplierBillForm
           companyId={companyIdNum}
           supplierId={supplierIdNum}
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmit as any}
           isLoading={createBill.isPending}
           submitLabel="Create Bill"
         />

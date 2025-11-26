@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ProductSearch } from '@/components/pos/ProductSearch'
-import { BillItemList } from './BillItemList'
 import type {
   ProductVariant,
   Product,
@@ -131,21 +130,6 @@ export function SupplierBillForm({
     setCartItems(newItems)
   }
 
-  const handleEditItem = (item: SupplierBillItem) => {
-    const index = cartItems.findIndex((i) => i.id === item.id)
-    if (index >= 0) {
-      // Focus on editing that item - could open a dialog or inline edit
-      // For now, just update the values
-      const newItems = [...cartItems]
-      newItems[index] = {
-        id: item.id,
-        product_variant_id: item.product_variant_id,
-        quantity: item.quantity,
-        unit_cost: item.unit_cost,
-      }
-      setCartItems(newItems)
-    }
-  }
 
   const totalAmount = cartItems.reduce(
     (sum, item) => sum + item.quantity * item.unit_cost,

@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Building2, Store, Check, ChevronDown, X } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import type { Portal } from '@/types/api'
 
 export function PortalSelector() {

@@ -1,4 +1,3 @@
-import React from 'react'
 import {
   Dialog,
   DialogContent,
@@ -21,7 +20,7 @@ export function OrderDetailsDialog({
   open,
   onOpenChange,
   order,
-  companyId,
+  companyId: _companyId,
 }: OrderDetailsDialogProps) {
   if (!order) return null
 

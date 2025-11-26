@@ -53,8 +53,8 @@ export function SupplierOutstandingBalanceCard({
           </div>
           <div className="flex gap-2">
             <Link
-              to="/companies/$companyId/suppliers/$supplierId/payments/new"
-              params={{ companyId: companyId.toString(), supplierId: supplierId.toString() }}
+              to={"/companies/$companyId/suppliers/$supplierId/payments/new" as any}
+              params={{ companyId: companyId.toString(), supplierId: supplierId.toString() } as any}
             >
               <Button size="sm" variant="outline">
                 <Plus className="h-4 w-4 mr-2" />

@@ -61,7 +61,7 @@ export function FranchisePricingDialog({
   open,
   onOpenChange,
   companyId,
-  franchiseId,
+  franchiseId: _franchiseId,
   existingPricing,
   onSubmit,
   isLoading,

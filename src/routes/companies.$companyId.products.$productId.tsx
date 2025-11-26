@@ -121,7 +121,7 @@ function ProductDetailsPage() {
               {product.is_active ? 'Active' : 'Inactive'}
             </Badge>
           </div>
-          <Link to={`/companies/${companyId}/products/${productId}/edit`}>
+          <Link to={`/companies/${companyId}/products/${productId}/edit` as any}>
             <Button variant="outline">
               <Edit className="mr-2 h-4 w-4" />
               Edit
@@ -187,7 +187,7 @@ function ProductDetailsPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Supplier</p>
                     <Link
-                      to={`/companies/${companyId}/suppliers/${supplier.id}`}
+                      to={`/companies/${companyId}/suppliers/${supplier.id}` as any}
                       className="text-base font-medium hover:text-primary transition-colors"
                     >
                       {supplier.name}
@@ -221,7 +221,7 @@ function ProductDetailsPage() {
               <CardDescription>Different variations of this product</CardDescription>
             </div>
             <div className="flex gap-2">
-              <Link to={`/companies/${companyId}/products/${productId}/variants/bulk`}>
+              <Link to={`/companies/${companyId}/products/${productId}/variants/bulk` as any}>
                 <Button variant="outline">
                   <Layers className="mr-2 h-4 w-4" />
                   Bulk Create
@@ -239,12 +239,14 @@ function ProductDetailsPage() {
                 variants={product.variants}
                 onEdit={setEditingVariant}
                 onDelete={handleDeleteVariant}
+                companyId={Number(companyId)}
+                productId={Number(productId)}
               />
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <p className="mb-4">No variants yet</p>
                 <div className="flex gap-2 justify-center">
-                  <Link to={`/companies/${companyId}/products/${productId}/variants/bulk`}>
+                  <Link to={`/companies/${companyId}/products/${productId}/variants/bulk` as any}>
                     <Button variant="outline">
                       <Layers className="mr-2 h-4 w-4" />
                       Bulk Create Variants
@@ -288,7 +290,7 @@ function ProductDetailsPage() {
             </DialogHeader>
             <VariantForm
               initialData={editingVariant}
-              onSubmit={async (data) => {
+              onSubmit={async (_data) => {
                 // We would need to implement updateVariant mutation here
                 setEditingVariant(null)
               }}

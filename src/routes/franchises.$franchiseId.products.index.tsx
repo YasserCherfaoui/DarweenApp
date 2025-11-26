@@ -176,7 +176,7 @@ function FranchiseProductsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Link to={`/franchises/${franchiseId}/products/${product.id}`}>
+                          <Link to={`/franchises/${franchiseId}/products/${product.id}` as any}>
                             <Button variant="ghost" size="icon-sm">
                               <Eye className="h-4 w-4" />
                             </Button>

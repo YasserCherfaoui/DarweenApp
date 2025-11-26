@@ -76,7 +76,7 @@ function CompanyOrdersPage() {
                 Manage online orders from Shopify, WooCommerce, and manual entries
               </p>
             </div>
-            <Link to={`/companies/${companyId}/orders/new`}>
+            <Link to={`/companies/${companyId}/orders/new` as any}>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 New Order
@@ -213,7 +213,7 @@ function CompanyOrdersPage() {
               <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
                 Orders from Shopify, WooCommerce, or manual entries will appear here.
               </p>
-              <Link to={`/companies/${companyId}/orders/new`}>
+              <Link to={`/companies/${companyId}/orders/new` as any}>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Your First Order

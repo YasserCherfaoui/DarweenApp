@@ -46,7 +46,7 @@ export function WebhookConfigsList({
   onDeleteWooCommerce,
   onCreateShopify,
   onCreateWooCommerce,
-  isLoading = false,
+  isLoading: _isLoading = false,
 }: WebhookConfigsListProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [configToDelete, setConfigToDelete] = useState<{

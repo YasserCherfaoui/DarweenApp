@@ -40,7 +40,7 @@ export function FranchiseCard({ franchise }: FranchiseCardProps) {
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
           {franchise.description || 'No description provided'}
         </p>
-        <Link to={`/companies/${franchise.parent_company_id}/franchises/${franchise.id}`}>
+        <Link to={`/companies/${franchise.parent_company_id}/franchises/${franchise.id}` as any}>
           <Button variant="outline" className="w-full">
             View Details
             <ArrowRight className="ml-2 h-4 w-4" />

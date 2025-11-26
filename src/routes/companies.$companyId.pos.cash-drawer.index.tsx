@@ -64,12 +64,12 @@ function CashDrawerPage() {
   }
 
   const handleCloseDrawer = (data: any) => {
-    if (!activeDrawer?.data) return
+    if (!activeDrawer) return
 
     closeDrawer.mutate(
       {
         companyId: Number(companyId),
-        drawerId: activeDrawer.data.id,
+        drawerId: activeDrawer.id,
         data,
       },
       {
@@ -92,10 +92,10 @@ function CashDrawerPage() {
     )
   }
 
-  const expectedBalance = activeDrawer?.data
-    ? activeDrawer.data.opening_balance +
-      (activeDrawer.data.transactions?.reduce(
-        (sum, t) =>
+  const expectedBalance = activeDrawer
+    ? activeDrawer.opening_balance +
+      (activeDrawer.transactions?.reduce(
+        (sum: number, t: any) =>
           sum +
           (t.transaction_type === 'sale' ? t.amount : -Math.abs(t.amount)),
         0
@@ -129,13 +129,13 @@ function CashDrawerPage() {
         <CardHeader>
           <CardTitle>Current Cash Drawer</CardTitle>
           <CardDescription>
-            {activeDrawer?.data
+            {activeDrawer
               ? 'Cash drawer is currently open'
               : 'No active cash drawer'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {activeDrawer?.data ? (
+          {activeDrawer ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -148,7 +148,7 @@ function CashDrawerPage() {
                 <div>
                   <div className="text-sm text-gray-500">Opening Balance</div>
                   <div className="text-xl font-semibold">
-                    ${activeDrawer.data.opening_balance.toFixed(2)}
+                    ${activeDrawer.opening_balance.toFixed(2)}
                   </div>
                 </div>
                 <div>
@@ -162,15 +162,15 @@ function CashDrawerPage() {
               <div>
                 <div className="text-sm text-gray-500 mb-2">Transactions</div>
                 <div className="text-2xl font-bold">
-                  {activeDrawer.data.transactions?.length || 0} transactions
+                  {activeDrawer.transactions?.length || 0} transactions
                 </div>
               </div>
 
               <div>
                 <div className="text-sm text-gray-500 mb-1">Opened By</div>
                 <div>
-                  User #{activeDrawer.data.opened_by_id} at{' '}
-                  {new Date(activeDrawer.data.opened_at).toLocaleString()}
+                  User #{activeDrawer.opened_by_id} at{' '}
+                  {new Date(activeDrawer.opened_at).toLocaleString()}
                 </div>
               </div>
 
@@ -289,7 +289,7 @@ function CashDrawerPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         type={dialogType}
-        activeDrawer={activeDrawer?.data}
+        activeDrawer={activeDrawer}
         onSubmit={dialogType === 'open' ? handleOpenDrawer : handleCloseDrawer}
         isLoading={openDrawer.isPending || closeDrawer.isPending}
       />

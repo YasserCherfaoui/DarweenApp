@@ -54,7 +54,7 @@ function SupplierBillDetailPage() {
               Bill #{bill?.bill_number || billId}
             </h1>
             <p className="text-muted-foreground">
-              Bill details for {supplier?.data?.name || 'supplier'}
+              Bill details for {supplier?.name || 'supplier'}
             </p>
           </div>
         </div>

@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link } from '@tanstack/react-router'
 import {
   Table,
@@ -10,7 +9,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Eye, Package, ShoppingCart } from 'lucide-react'
+import { Eye } from 'lucide-react'
 import type { Order } from '@/types/api'
 
 interface OrdersTableProps {
@@ -111,7 +110,7 @@ export function OrdersTable({ orders, companyId }: OrdersTableProps) {
                 <TableCell>{formatDate(order.created_at)}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Link to={`/companies/${companyId}/orders/${order.id}`}>
+                    <Link to={`/companies/${companyId}/orders/${order.id}` as any}>
                       <Button variant="ghost" size="icon-sm">
                         <Eye className="h-4 w-4" />
                       </Button>

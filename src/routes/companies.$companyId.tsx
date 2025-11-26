@@ -57,7 +57,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useSelectedCompany } from '@/hooks/use-selected-company'
 import { apiClient } from '@/lib/api-client'
 import { rootRoute } from '@/main'
-import type { AddUserToCompanyResponse, CreateSMTPConfigRequest, CreateShopifyWebhookConfigRequest, CreateWooCommerceWebhookConfigRequest, CreateYalidineConfigRequest, SMTPConfigResponse, SMTPSecurityType, ShopifyWebhookConfig, UpdateSMTPConfigRequest, UpdateShopifyWebhookConfigRequest, UpdateWooCommerceWebhookConfigRequest, UpdateYalidineConfigRequest, UserRole, UserWithRole, WooCommerceWebhookConfig, YalidineConfigResponse } from '@/types/api'
+import type { AddUserToCompanyResponse, CreateSMTPConfigRequest, CreateShopifyWebhookConfigRequest, CreateWooCommerceWebhookConfigRequest, CreateYalidineConfigRequest, SMTPConfig, SMTPConfigResponse, SMTPSecurityType, ShopifyWebhookConfig, UpdateSMTPConfigRequest, UpdateShopifyWebhookConfigRequest, UpdateWooCommerceWebhookConfigRequest, UpdateYalidineConfigRequest, UserRole, UserWithRole, WooCommerceWebhookConfig, YalidineConfigResponse } from '@/types/api'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, createRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Edit, Mail, Package, Plus, Store, TestTube, Truck, Users, Warehouse } from 'lucide-react'
@@ -142,7 +142,7 @@ function CompanyDetailsPage() {
 
   const handleAddUser = async (data: { email: string; role: string }) => {
     try {
-      const response = await addUserMutation.mutateAsync({ email: data.email, role: data.role as UserRole })
+      const response = await addUserMutation.mutateAsync({ email: data.email, role: data.role as UserRole as any })
       setAddUserDialogOpen(false)
       
       // If user was created, show credentials dialog
@@ -478,7 +478,7 @@ function CompanyDetailsPage() {
               {company.is_active ? 'Active' : 'Inactive'}
             </Badge>
           </div>
-          <Link to={`/companies/${company.id}/edit`}>
+          <Link to={`/companies/${company.id}/edit` as any}>
             <Button variant="outline">
               <Edit className="mr-2 h-4 w-4" />
               Edit
@@ -559,25 +559,25 @@ function CompanyDetailsPage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Link to={`/companies/${company.id}/products`}>
+              <Link to={`/companies/${company.id}/products` as any}>
                 <Button variant="outline" className="w-full h-24 flex-col">
                   <Package className="h-8 w-8 mb-2" />
                   <span>Manage Products</span>
                 </Button>
               </Link>
-              <Link to={`/companies/${company.id}/suppliers`}>
+              <Link to={`/companies/${company.id}/suppliers` as any}>
                 <Button variant="outline" className="w-full h-24 flex-col">
                   <Truck className="h-8 w-8 mb-2" />
                   <span>Manage Suppliers</span>
                 </Button>
               </Link>
-              <Link to={`/companies/${company.id}/inventory`}>
+              <Link to={`/companies/${company.id}/inventory` as any}>
                 <Button variant="outline" className="w-full h-24 flex-col">
                   <Warehouse className="h-8 w-8 mb-2" />
                   <span>Manage Inventory</span>
                 </Button>
               </Link>
-              <Link to={`/companies/${company.id}/franchises`}>
+              <Link to={`/companies/${company.id}/franchises` as any}>
                 <Button variant="outline" className="w-full h-24 flex-col">
                   <Store className="h-8 w-8 mb-2" />
                   <span>Manage Franchises</span>
@@ -594,7 +594,7 @@ function CompanyDetailsPage() {
                   {initializeInventory.isPending ? 'Initializing...' : 'Initialize Inventory'}
                 </span>
               </Button>
-              <Link to={`/companies/${company.id}/edit`}>
+              <Link to={`/companies/${company.id}/edit` as any}>
                 <Button variant="outline" className="w-full h-24 flex-col">
                   <Edit className="h-8 w-8 mb-2" />
                   <span>Edit Company</span>
@@ -847,7 +847,7 @@ function CompanyDetailsPage() {
           setSmtpConfigDialogOpen(open)
           if (!open) setSmtpConfigToEdit(null)
         }}
-        initialData={smtpConfigToEdit || undefined}
+        initialData={(smtpConfigToEdit || undefined) as Partial<SMTPConfig> | undefined}
         onSubmit={handleSubmitSMTPConfig}
         isLoading={createSMTPConfig.isPending}
       />

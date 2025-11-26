@@ -4,7 +4,7 @@ import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
 import { Button } from '@/components/ui/button'
 import { Loading } from '@/components/ui/loading'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, CheckCircle } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { WarehouseBillTable } from '@/components/warehousebills/WarehouseBillTable'
 import { WarehouseBillDetailsDialog } from '@/components/warehousebills/WarehouseBillDetailsDialog'
 import { VerifyEntryBillDialog } from '@/components/warehousebills/VerifyEntryBillDialog'
@@ -45,11 +45,6 @@ function FranchiseWarehouseBillsPage() {
   const handleViewDetails = (bill: WarehouseBill) => {
     setSelectedBill(bill)
     setDetailsOpen(true)
-  }
-
-  const handleVerify = (bill: WarehouseBill) => {
-    setSelectedBill(bill)
-    setVerifyOpen(true)
   }
 
   const handleVerifySubmit = async (data: VerifyEntryBillRequest) => {

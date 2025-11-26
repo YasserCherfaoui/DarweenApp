@@ -1,4 +1,4 @@
-import { createRoute, Link, useNavigate } from '@tanstack/react-router'
+import { createRoute, Link } from '@tanstack/react-router'
 import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -16,7 +16,6 @@ export const CompanyFranchisesRoute = createRoute({
 
 function CompanyFranchisesPage() {
   const { companyId } = CompanyFranchisesRoute.useParams()
-  const navigate = useNavigate()
   const companyIdNum = Number(companyId)
 
   const { data: franchises, isLoading } = useCompanyFranchises(companyIdNum)
@@ -33,7 +32,7 @@ function CompanyFranchisesPage() {
               Manage franchise locations for this company
             </p>
           </div>
-          <Link to={`/companies/${companyId}/franchises/create`}>
+          <Link to={`/companies/${companyId}/franchises/create` as any}>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               New Franchise
@@ -68,7 +67,7 @@ function CompanyFranchisesPage() {
               <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
                 Create your first franchise location to expand your business operations.
               </p>
-              <Link to={`/companies/${companyId}/franchises/create`}>
+              <Link to={`/companies/${companyId}/franchises/create` as any}>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Your First Franchise

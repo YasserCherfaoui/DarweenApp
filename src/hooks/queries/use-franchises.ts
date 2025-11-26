@@ -144,8 +144,13 @@ export const useAddUserToFranchise = (franchiseId: number) => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: (data: AddUserToFranchiseRequest): Promise<{ data: AddUserToFranchiseResponse }> => 
-      apiClient.franchises.addUser(franchiseId, data),
+    mutationFn: async (data: AddUserToFranchiseRequest): Promise<{ data: AddUserToFranchiseResponse }> => {
+      const response = await apiClient.franchises.addUser(franchiseId, data)
+      if (!response.data) {
+        throw new Error('Failed to add user to franchise')
+      }
+      return { data: response.data }
+    },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['franchises', franchiseId, 'users'] })
       if (response.data.user_created) {

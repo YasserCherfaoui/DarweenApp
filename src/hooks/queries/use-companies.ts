@@ -70,8 +70,13 @@ export const useAddUserToCompany = (companyId: number) => {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: (data: AddUserToCompanyRequest): Promise<{ data: AddUserToCompanyResponse }> => 
-      apiClient.companies.addUser(companyId, data),
+    mutationFn: async (data: AddUserToCompanyRequest): Promise<{ data: AddUserToCompanyResponse }> => {
+      const response = await apiClient.companies.addUser(companyId, data)
+      if (!response.data) {
+        throw new Error('Failed to add user to company')
+      }
+      return { data: response.data }
+    },
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['companies', companyId, 'users'] })
       if (response.data.user_created) {

@@ -9,7 +9,6 @@ import {
   Users,
   DollarSign,
   LayoutDashboard,
-  Store,
 } from 'lucide-react'
 
 const getPOSNavigation = (companyId: number) => [

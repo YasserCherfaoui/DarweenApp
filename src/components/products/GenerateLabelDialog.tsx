@@ -130,21 +130,18 @@ export function GenerateLabelDialog({
       if (values.qr_size_mm) config.qr_size_mm = Number(values.qr_size_mm)
       if (values.font_size) config.font_size = Number(values.font_size)
 
-      const configToSend = Object.keys(config).length > 0 ? { config } : undefined
 
       let blob: Blob
       if (variantId) {
         blob = await apiClient.labels.generateVariantLabel(
           companyId,
           productId,
-          variantId,
-          configToSend
+          variantId
         )
       } else {
         blob = await apiClient.labels.generateProductLabel(
           companyId,
-          productId,
-          configToSend
+          productId
         )
       }
 

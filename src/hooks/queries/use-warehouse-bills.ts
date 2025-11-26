@@ -2,13 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import { apiClient } from '@/lib/api-client'
 import type {
-  WarehouseBill,
   CreateExitBillRequest,
   CreateEntryBillRequest,
   VerifyEntryBillRequest,
   UpdateExitBillItemsRequest,
   PaginationParams,
-  ProductVariantSearchResponse,
 } from '@/types/api'
 import { toast } from 'sonner'
 
@@ -76,7 +74,7 @@ export const useCreateExitBill = () => {
       })
       toast.success('Exit bill created successfully')
     },
-    onError: (error: Error) => {
+    onError: (_error: Error) => {
       // Error is handled in the component with ErrorDialog
       // Don't show toast for errors
     },

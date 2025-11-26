@@ -50,7 +50,7 @@ function CompanySuppliersPage() {
               Manage your suppliers and vendor relationships
             </p>
           </div>
-          <Link to={`/companies/${companyId}/suppliers/create`}>
+          <Link to={`/companies/${companyId}/suppliers/create` as any}>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
               New Supplier
@@ -89,7 +89,7 @@ function CompanySuppliersPage() {
               <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
                 Get started by adding your first supplier. You'll be able to track products, contact information, and more.
               </p>
-              <Link to={`/companies/${companyId}/suppliers/create`}>
+              <Link to={`/companies/${companyId}/suppliers/create` as any}>
                 <Button>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Your First Supplier

@@ -41,8 +41,10 @@ export function CustomerSelector({
     createCustomer.mutate(
       { companyId, data },
       {
-        onSuccess: (response) => {
-          onSelectCustomer(response.data)
+        onSuccess: (customer) => {
+          if (customer) {
+            onSelectCustomer(customer)
+          }
           setOpen(false)
           setShowCreateForm(false)
         },

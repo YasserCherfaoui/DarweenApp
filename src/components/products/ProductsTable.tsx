@@ -90,12 +90,12 @@ export function ProductsTable({ products, companyId, onDelete }: ProductsTablePr
                         >
                           <Tag className="h-4 w-4" />
                         </Button>
-                        <Link to={`/companies/${companyId}/products/${product.id}`}>
+                        <Link to={`/companies/${companyId}/products/${product.id}` as any}>
                           <Button variant="ghost" size="icon-sm">
                             <Eye className="h-4 w-4" />
                           </Button>
                         </Link>
-                        <Link to={`/companies/${companyId}/products/${product.id}/edit`}>
+                        <Link to={`/companies/${companyId}/products/${product.id}/edit` as any}>
                           <Button variant="ghost" size="icon-sm">
                             <Edit className="h-4 w-4" />
                           </Button>

@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/table'
 import { useProduct } from '@/hooks/queries/use-products'
 import { useFranchise, useFranchisePricing } from '@/hooks/queries/use-franchises'
-import { ArrowLeft, Truck, DollarSign } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { rootRoute } from '@/main'
 import type { FranchisePricing } from '@/types/api'
 

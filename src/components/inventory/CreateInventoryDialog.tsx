@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/select'
 import { useCreateInventory } from '@/hooks/queries/use-inventory'
 import { useProducts } from '@/hooks/queries/use-products'
-import type { ProductVariant } from '@/types/api'
 
 interface CreateInventoryDialogProps {
   companyId: number

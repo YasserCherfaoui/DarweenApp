@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -104,8 +103,7 @@ export function WarehouseBillDetailsPage({
         bill={bill}
         companyId={companyId}
         franchiseId={bill.franchise_id}
-        onSave={(updatedBill) => {
-          setBill(updatedBill)
+        onSave={() => {
           setIsEditing(false)
         }}
         onCancel={() => setIsEditing(false)}
