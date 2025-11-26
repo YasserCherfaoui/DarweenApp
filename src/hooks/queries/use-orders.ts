@@ -281,6 +281,17 @@ export const useDeleteQualification = (companyId: number) => {
 }
 
 // Webhook Configs
+export const useShopifyWebhookConfigs = (companyId: number) => {
+  return useQuery({
+    queryKey: ['shopifyWebhookConfigs', companyId],
+    queryFn: async () => {
+      const response = await apiClient.orders.shopifyWebhookConfigs.list(companyId)
+      return response.data
+    },
+    enabled: !!companyId,
+  })
+}
+
 export const useCreateShopifyWebhookConfig = (companyId: number) => {
   const queryClient = useQueryClient()
 
@@ -335,6 +346,17 @@ export const useDeleteShopifyWebhookConfig = (companyId: number) => {
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to delete Shopify webhook config')
     },
+  })
+}
+
+export const useWooCommerceWebhookConfigs = (companyId: number) => {
+  return useQuery({
+    queryKey: ['woocommerceWebhookConfigs', companyId],
+    queryFn: async () => {
+      const response = await apiClient.orders.woocommerceWebhookConfigs.list(companyId)
+      return response.data
+    },
+    enabled: !!companyId,
   })
 }
 

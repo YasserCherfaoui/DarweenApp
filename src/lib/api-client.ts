@@ -727,9 +727,7 @@ class ApiClient {
   labels = {
     generateProductLabel: async (
       companyId: number,
-      productId: number,
-      config?: any
-    ): Promise<Blob> => {
+      productId: number    ): Promise<Blob> => {
       const token = this.getAuthToken()
       const headers: HeadersInit = {}
       
@@ -754,9 +752,7 @@ class ApiClient {
     generateVariantLabel: async (
       companyId: number,
       productId: number,
-      variantId: number,
-      config?: any
-    ): Promise<Blob> => {
+      variantId: number    ): Promise<Blob> => {
       const token = this.getAuthToken()
       const headers: HeadersInit = {}
       
@@ -1885,6 +1881,12 @@ class ApiClient {
 
     // Webhook Config endpoints
     shopifyWebhookConfigs: {
+      list: async (
+        companyId: number
+      ): Promise<ApiResponse<ShopifyWebhookConfig[]>> => {
+        return this.request(`/companies/${companyId}/webhooks/shopify`)
+      },
+
       create: async (
         companyId: number,
         data: CreateShopifyWebhookConfigRequest
@@ -1932,6 +1934,12 @@ class ApiClient {
     },
 
     woocommerceWebhookConfigs: {
+      list: async (
+        companyId: number
+      ): Promise<ApiResponse<WooCommerceWebhookConfig[]>> => {
+        return this.request(`/companies/${companyId}/webhooks/woocommerce`)
+      },
+
       create: async (
         companyId: number,
         data: CreateWooCommerceWebhookConfigRequest

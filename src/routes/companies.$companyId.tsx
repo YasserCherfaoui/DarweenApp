@@ -25,6 +25,9 @@ import { NotFound } from '@/components/ui/not-found'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ShopifyWebhookConfigDialog } from '@/components/webhooks/ShopifyWebhookConfigDialog'
+import { WebhookConfigsList } from '@/components/webhooks/WebhookConfigsList'
+import { WooCommerceWebhookConfigDialog } from '@/components/webhooks/WooCommerceWebhookConfigDialog'
 import {
   useAddUserToCompany,
   useCompany,
@@ -33,6 +36,14 @@ import {
   useRemoveUserFromCompany,
   useUpdateCompanyUserRole,
 } from '@/hooks/queries/use-companies'
+import {
+  useCreateShopifyWebhookConfig,
+  useCreateWooCommerceWebhookConfig,
+  useDeleteShopifyWebhookConfig,
+  useDeleteWooCommerceWebhookConfig,
+  useShopifyWebhookConfigs,
+  useWooCommerceWebhookConfigs,
+} from '@/hooks/queries/use-orders'
 import {
   useCreateSMTPConfig,
   useSMTPConfigs,
@@ -46,7 +57,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { useSelectedCompany } from '@/hooks/use-selected-company'
 import { apiClient } from '@/lib/api-client'
 import { rootRoute } from '@/main'
-import type { AddUserToCompanyResponse, CreateSMTPConfigRequest, CreateYalidineConfigRequest, SMTPConfigResponse, SMTPSecurityType, UpdateSMTPConfigRequest, UpdateYalidineConfigRequest, UserWithRole, YalidineConfigResponse } from '@/types/api'
+import type { AddUserToCompanyResponse, CreateSMTPConfigRequest, CreateShopifyWebhookConfigRequest, CreateWooCommerceWebhookConfigRequest, CreateYalidineConfigRequest, SMTPConfigResponse, SMTPSecurityType, ShopifyWebhookConfig, UpdateSMTPConfigRequest, UpdateShopifyWebhookConfigRequest, UpdateWooCommerceWebhookConfigRequest, UpdateYalidineConfigRequest, UserWithRole, WooCommerceWebhookConfig, YalidineConfigResponse } from '@/types/api'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, createRoute, useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Edit, Mail, Package, Plus, Store, TestTube, Truck, Users, Warehouse } from 'lucide-react'
@@ -100,6 +111,19 @@ function CompanyDetailsPage() {
   const [yalidineConfigToDelete, setYalidineConfigToDelete] = useState<YalidineConfigResponse | null>(null)
   const [deleteYalidineConfigDialogOpen, setDeleteYalidineConfigDialogOpen] = useState(false)
   const testYalidineConnection = useTestYalidineConnection(companyIdNum)
+  
+  // Webhook Config state
+  const { data: shopifyConfigs, isLoading: shopifyConfigsLoading } = useShopifyWebhookConfigs(companyIdNum)
+  const { data: woocommerceConfigs, isLoading: woocommerceConfigsLoading } = useWooCommerceWebhookConfigs(companyIdNum)
+  const createShopifyConfig = useCreateShopifyWebhookConfig(companyIdNum)
+  const deleteShopifyConfig = useDeleteShopifyWebhookConfig(companyIdNum)
+  const createWooCommerceConfig = useCreateWooCommerceWebhookConfig(companyIdNum)
+  const deleteWooCommerceConfig = useDeleteWooCommerceWebhookConfig(companyIdNum)
+  
+  const [shopifyConfigDialogOpen, setShopifyConfigDialogOpen] = useState(false)
+  const [shopifyConfigToEdit, setShopifyConfigToEdit] = useState<ShopifyWebhookConfig | null>(null)
+  const [woocommerceConfigDialogOpen, setWooCommerceConfigDialogOpen] = useState(false)
+  const [woocommerceConfigToEdit, setWooCommerceConfigToEdit] = useState<WooCommerceWebhookConfig | null>(null)
   const hasValidDefaultYalidineConfig = useMemo(
     () => (yalidineConfigs || []).some((config) => config.is_default && config.is_active),
     [yalidineConfigs]
@@ -118,7 +142,7 @@ function CompanyDetailsPage() {
 
   const handleAddUser = async (data: { email: string; role: string }) => {
     try {
-      const response = await addUserMutation.mutateAsync(data)
+      const response = await addUserMutation.mutateAsync({ email: data.email, role: data.role as Role })
       setAddUserDialogOpen(false)
       
       // If user was created, show credentials dialog
@@ -335,6 +359,69 @@ function CompanyDetailsPage() {
     }
   }
 
+  // Webhook Config handlers
+  const handleCreateShopifyConfig = () => {
+    setShopifyConfigToEdit(null)
+    setShopifyConfigDialogOpen(true)
+  }
+
+  const handleEditShopifyConfig = (config: ShopifyWebhookConfig) => {
+    setShopifyConfigToEdit(config)
+    setShopifyConfigDialogOpen(true)
+  }
+
+  const handleSubmitShopifyConfig = async (data: CreateShopifyWebhookConfigRequest | UpdateShopifyWebhookConfigRequest) => {
+    try {
+      if (shopifyConfigToEdit) {
+        await apiClient.orders.shopifyWebhookConfigs.update(companyIdNum, shopifyConfigToEdit.id, data as UpdateShopifyWebhookConfigRequest)
+        queryClient.invalidateQueries({ queryKey: ['shopifyWebhookConfigs', companyIdNum] })
+        toast.success('Shopify webhook config updated successfully')
+        setShopifyConfigDialogOpen(false)
+        setShopifyConfigToEdit(null)
+      } else {
+        await createShopifyConfig.mutateAsync(data as CreateShopifyWebhookConfigRequest)
+        setShopifyConfigDialogOpen(false)
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save Shopify webhook config')
+    }
+  }
+
+  const handleDeleteShopifyConfig = async (config: ShopifyWebhookConfig) => {
+    await deleteShopifyConfig.mutateAsync(config.id)
+  }
+
+  const handleCreateWooCommerceConfig = () => {
+    setWooCommerceConfigToEdit(null)
+    setWooCommerceConfigDialogOpen(true)
+  }
+
+  const handleEditWooCommerceConfig = (config: WooCommerceWebhookConfig) => {
+    setWooCommerceConfigToEdit(config)
+    setWooCommerceConfigDialogOpen(true)
+  }
+
+  const handleSubmitWooCommerceConfig = async (data: CreateWooCommerceWebhookConfigRequest | UpdateWooCommerceWebhookConfigRequest) => {
+    try {
+      if (woocommerceConfigToEdit) {
+        await apiClient.orders.woocommerceWebhookConfigs.update(companyIdNum, woocommerceConfigToEdit.id, data as UpdateWooCommerceWebhookConfigRequest)
+        queryClient.invalidateQueries({ queryKey: ['woocommerceWebhookConfigs', companyIdNum] })
+        toast.success('WooCommerce webhook config updated successfully')
+        setWooCommerceConfigDialogOpen(false)
+        setWooCommerceConfigToEdit(null)
+      } else {
+        await createWooCommerceConfig.mutateAsync(data as CreateWooCommerceWebhookConfigRequest)
+        setWooCommerceConfigDialogOpen(false)
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save WooCommerce webhook config')
+    }
+  }
+
+  const handleDeleteWooCommerceConfig = async (config: WooCommerceWebhookConfig) => {
+    await deleteWooCommerceConfig.mutateAsync(config.id)
+  }
+
   if (isLoading) {
     return (
       <RoleBasedLayout>
@@ -523,6 +610,7 @@ function CompanyDetailsPage() {
             <TabsTrigger value="users">User Management</TabsTrigger>
             <TabsTrigger value="smtp">SMTP Config</TabsTrigger>
             <TabsTrigger value="yalidine">Yalidine</TabsTrigger>
+            <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
             <TabsTrigger value="emails">Send Email</TabsTrigger>
           </TabsList>
 
@@ -634,6 +722,41 @@ function CompanyDetailsPage() {
                     onEdit={handleEditYalidineConfig}
                     onDelete={handleDeleteYalidineConfig}
                     onSetDefault={handleSetDefaultYalidineConfig}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="webhooks" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Webhook Configurations</CardTitle>
+                    <CardDescription>
+                      Configure webhooks to automatically import orders from Shopify and WooCommerce stores
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {shopifyConfigsLoading || woocommerceConfigsLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : (
+                  <WebhookConfigsList
+                    shopifyConfigs={shopifyConfigs || []}
+                    woocommerceConfigs={woocommerceConfigs || []}
+                    onEditShopify={handleEditShopifyConfig}
+                    onEditWooCommerce={handleEditWooCommerceConfig}
+                    onDeleteShopify={handleDeleteShopifyConfig}
+                    onDeleteWooCommerce={handleDeleteWooCommerceConfig}
+                    onCreateShopify={handleCreateShopifyConfig}
+                    onCreateWooCommerce={handleCreateWooCommerceConfig}
                   />
                 )}
               </CardContent>
@@ -783,6 +906,29 @@ function CompanyDetailsPage() {
         open={emailComposerOpen}
         onOpenChange={setEmailComposerOpen}
         companyId={companyIdNum}
+      />
+
+      {/* Webhook Config Dialogs */}
+      <ShopifyWebhookConfigDialog
+        open={shopifyConfigDialogOpen}
+        onOpenChange={(open: boolean) => {
+          setShopifyConfigDialogOpen(open)
+          if (!open) setShopifyConfigToEdit(null)
+        }}
+        initialData={shopifyConfigToEdit || undefined}
+        onSubmit={handleSubmitShopifyConfig}
+        isLoading={createShopifyConfig.isPending}
+      />
+
+      <WooCommerceWebhookConfigDialog
+        open={woocommerceConfigDialogOpen}
+        onOpenChange={(open: boolean) => {
+          setWooCommerceConfigDialogOpen(open)
+          if (!open) setWooCommerceConfigToEdit(null)
+        }}
+        initialData={woocommerceConfigToEdit || undefined}
+        onSubmit={handleSubmitWooCommerceConfig}
+        isLoading={createWooCommerceConfig.isPending}
       />
     </RoleBasedLayout>
   )
