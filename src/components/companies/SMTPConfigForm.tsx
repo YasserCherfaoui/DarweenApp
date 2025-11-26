@@ -38,13 +38,13 @@ const smtpConfigSchema = z.object({
   }, { message: 'Port must be between 1 and 65535' }),
   from_name: z.string().optional(),
   security: z.enum(['none', 'ssl', 'tls', 'starttls'], {
-    required_error: 'Please select a security type',
+    message: 'Please select a security type',
   }),
   rate_limit: z.string().refine((val) => {
     const num = Number(val)
     return !isNaN(num) && num >= 1
   }, { message: 'Rate limit must be at least 1' }),
-  is_active: z.boolean().default(true),
+  is_active: z.boolean().optional().default(true),
 })
 
 type FormValues = z.infer<typeof smtpConfigSchema>

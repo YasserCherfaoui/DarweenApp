@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { DashboardLayout } from './DashboardLayout'
 import { POSLayout } from './POSLayout'
 import { useUserRole } from '@/hooks/use-user-role'

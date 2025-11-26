@@ -91,7 +91,6 @@ export function PermissionError({
   onGoBack,
 }: PermissionErrorProps) {
   const { role } = useUserRole()
-  const { hasPermission } = usePermissions()
 
   // Get permission text
   const getPermissionText = () => {

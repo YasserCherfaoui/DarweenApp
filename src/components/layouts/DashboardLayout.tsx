@@ -8,7 +8,7 @@ import { portalStore } from '@/stores/portal-store'
 import { toggleSidebar } from '@/stores/sidebar-store'
 import { useStore } from '@tanstack/react-store'
 import { Menu } from 'lucide-react'
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Sidebar } from './Sidebar'
 import { UserMenu } from './UserMenu'
 

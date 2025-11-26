@@ -22,7 +22,7 @@ const cn = (...classes: (string | boolean | undefined)[]) => {
 
 const updateRoleSchema = z.object({
   role: z.enum(['owner', 'admin', 'manager', 'employee'], {
-    required_error: 'Please select a role',
+    message: 'Please select a role',
   }),
 })
 

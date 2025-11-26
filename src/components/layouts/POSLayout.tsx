@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { POSSidebar } from './POSSidebar'
 import { UserMenu } from './UserMenu'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'

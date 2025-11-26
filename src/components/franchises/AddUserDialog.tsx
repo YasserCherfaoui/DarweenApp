@@ -24,7 +24,7 @@ const cn = (...classes: (string | boolean | undefined)[]) => {
 const addUserSchema = z.object({
   email: z.string().min(1, { message: 'Email is required' }).email({ message: 'Please enter a valid email address' }),
   role: z.enum(['owner', 'admin', 'manager', 'employee'], {
-    required_error: 'Please select a role',
+    message: 'Please select a role',
   }),
 })
 

@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { usePermissions } from '@/hooks/use-permissions'
 import { useUserRole } from '@/hooks/use-user-role'
-import { PERMISSIONS, Permission, ROLE_PERMISSIONS } from '@/types/api'
+import { PERMISSIONS, ROLE_PERMISSIONS } from '@/types/api'
+import type { Permission } from '@/types/api'
 import { CheckCircle2, Info, XCircle } from 'lucide-react'
 
 interface PermissionInfoProps {

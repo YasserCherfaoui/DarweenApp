@@ -4,7 +4,7 @@ import { usePermissions } from '@/hooks/use-permissions'
 import { useUserRole } from '@/hooks/use-user-role'
 import type { Permission } from '@/types/api'
 import { AlertCircle, Info, Lock } from 'lucide-react'
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 interface PermissionEmptyStateProps {
   requiredPermission?: Permission

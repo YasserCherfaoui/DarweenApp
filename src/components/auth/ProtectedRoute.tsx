@@ -5,7 +5,8 @@ import { companyStore } from '@/stores/company-store'
 import type { Permission } from '@/types/api'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
-import { ReactNode, useEffect } from 'react'
+import { useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { PermissionError } from './PermissionError'
 
 interface ProtectedRouteProps {

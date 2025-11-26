@@ -1,9 +1,9 @@
-import { Button, ButtonProps } from '@/components/ui/button'
+import { Button, type ButtonProps } from '@/components/ui/button'
 import { usePermissions } from '@/hooks/use-permissions'
 import { cn } from '@/lib/utils'
 import type { Permission } from '@/types/api'
 import { Lock } from 'lucide-react'
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { PermissionTooltip } from './PermissionTooltip'
 
 interface PermissionButtonProps extends ButtonProps {
