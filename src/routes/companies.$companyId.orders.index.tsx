@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { OrdersTable } from '@/components/orders/OrdersTable'
+import { OrderStatusCounters } from '@/components/orders/OrderStatusCounters'
 import { useOrders } from '@/hooks/queries/use-orders'
 import { useCompany } from '@/hooks/queries/use-companies'
 import { useSelectedCompany } from '@/hooks/use-selected-company'
@@ -83,6 +84,15 @@ function CompanyOrdersPage() {
             </Link>
           </div>
         </div>
+
+        {/* Status Counters */}
+        <OrderStatusCounters
+          companyId={Number(companyId)}
+          onStatusClick={(status) => {
+            setStatusFilter(status)
+            setPage(1) // Reset to first page when filtering
+          }}
+        />
 
         {/* Filters */}
         <Card className="p-4">

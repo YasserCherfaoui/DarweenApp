@@ -1,19 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import type {
-  CreateOrderRequest,
-  UpdateOrderRequest,
   ConfirmOrderRequest,
-  UpdateOrderStatusRequest,
   CreateClientStatusRequest,
+  CreateOrderRequest,
   CreateQualificationRequest,
-  UpdateQualificationRequest,
   CreateShopifyWebhookConfigRequest,
-  UpdateShopifyWebhookConfigRequest,
   CreateWooCommerceWebhookConfigRequest,
-  UpdateWooCommerceWebhookConfigRequest,
   OrderFilters,
+  UpdateOrderRequest,
+  UpdateOrderStatusRequest,
+  UpdateQualificationRequest,
+  UpdateShopifyWebhookConfigRequest,
+  UpdateWooCommerceWebhookConfigRequest,
 } from '@/types/api'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 // Orders
@@ -23,6 +23,30 @@ export const useOrders = (companyId: number, filters?: OrderFilters) => {
     queryFn: async () => {
       const response = await apiClient.orders.list(companyId, filters)
       return response.data
+    },
+    enabled: !!companyId,
+  })
+}
+
+// Order Status Counts
+export const useOrderStatusCounts = (companyId: number) => {
+  return useQuery({
+    queryKey: ['orderStatusCounts', companyId],
+    queryFn: async () => {
+      const response = await apiClient.orders.getStatusCounts(companyId)
+      // Convert the response to match the expected format
+      const counts: Record<string, number> = {
+        unconfirmed: response.data?.unconfirmed || 0,
+        packing: response.data?.packing || 0,
+        dispatching: response.data?.dispatching || 0,
+        delivering: response.data?.delivering || 0,
+        delivered: response.data?.delivered || 0,
+        returning: response.data?.returning || 0,
+        returned: response.data?.returned || 0,
+        cancelled: response.data?.cancelled || 0,
+        relaunched: response.data?.relaunched || 0,
+      }
+      return counts
     },
     enabled: !!companyId,
   })
