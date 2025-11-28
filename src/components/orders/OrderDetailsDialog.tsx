@@ -128,10 +128,23 @@ export function OrderDetailsDialog({
                               Snapshot
                             </Badge>
                           )}
-                          {item.product_variant_id ? (
-                            <span>Variant #{item.product_variant_id}</span>
-                          ) : (
-                            <span>Product from webhook</span>
+                          <div className="font-medium">
+                            {item.product_name || 'Product'}
+                            {item.variant_name && (
+                              <span className="text-gray-600 ml-1">
+                                - {item.variant_name}
+                              </span>
+                            )}
+                          </div>
+                          {item.sku && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              SKU: {item.sku}
+                            </div>
+                          )}
+                          {item.product_variant_id && !item.product_name && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Variant ID: {item.product_variant_id}
+                            </div>
                           )}
                         </div>
                       </td>

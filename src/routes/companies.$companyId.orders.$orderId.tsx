@@ -205,11 +205,26 @@ function CompanyOrderPage() {
                             Snapshot
                           </span>
                         )}
-                        <span>
-                          {item.product_variant_id
-                            ? `Variant #${item.product_variant_id}`
-                            : 'Product from webhook'}
-                        </span>
+                        <div>
+                          <div className="font-medium">
+                            {item.product_name || 'Product'}
+                            {item.variant_name && (
+                              <span className="text-gray-600 ml-1">
+                                - {item.variant_name}
+                              </span>
+                            )}
+                          </div>
+                          {item.sku && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              SKU: {item.sku}
+                            </div>
+                          )}
+                          {item.product_variant_id && !item.product_name && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Variant ID: {item.product_variant_id}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <div className="text-sm text-gray-500 mt-1">
                         Qty: {item.confirmed_quantity ?? item.quantity} ×{' '}

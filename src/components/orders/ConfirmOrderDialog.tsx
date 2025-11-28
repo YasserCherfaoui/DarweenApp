@@ -68,6 +68,16 @@ function VariantSelectorItem({
   const getVariantDisplayValue = (variant: (ProductVariant & { product?: Product }) | null | undefined) => {
     if (!variant) {
       if (orderItem.is_snapshot) {
+        // Show product name and variant name if available from webhook
+        if (orderItem.product_name) {
+          const display = orderItem.variant_name
+            ? `${orderItem.product_name} - ${orderItem.variant_name}`
+            : orderItem.product_name
+          if (orderItem.sku) {
+            return `${display} (${orderItem.sku})`
+          }
+          return display
+        }
         return `Variant Snapshot #${orderItem.product_variant_id || 'N/A'}`
       }
       return 'Select variant...'
@@ -130,6 +140,12 @@ function VariantSelectorItem({
                             <div className="font-medium font-mono truncate">
                               {variant.sku}
                             </div>
+                            {variant.product && (
+                              <div className="text-xs text-gray-500 truncate">
+                                {variant.product.name}
+                                {variant.name && ` - ${variant.name}`}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </CommandItem>

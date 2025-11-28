@@ -1356,6 +1356,9 @@ export interface Order {
 export interface OrderItem {
   id: number
   product_variant_id?: number
+  product_name?: string
+  variant_name?: string
+  sku?: string
   is_snapshot: boolean
   quantity: number
   price: number
