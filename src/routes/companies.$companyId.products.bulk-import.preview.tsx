@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/table'
 import { useCompany } from '@/hooks/queries/use-companies'
 import { useSelectedCompany } from '@/hooks/use-selected-company'
-import { ArrowLeft, Check, X, ChevronDown, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Check, ChevronDown, ChevronRight } from 'lucide-react'
 import { rootRoute } from '@/main'
 import type { ParsedProduct, ParsedVariant } from '@/lib/csv-parser'
 import { apiClient } from '@/lib/api-client'
@@ -158,7 +158,6 @@ function BulkImportPreviewPage() {
         sessionStorage.removeItem('bulkImportData')
         navigate({
           to: `/companies/${companyId}/products`,
-          search: { success: 'bulk-import' },
         })
       }
     },
@@ -267,9 +266,6 @@ function BulkImportPreviewPage() {
                 <TableBody>
                   {products.map((product) => {
                     const isExpanded = expandedProducts.has(product.sku)
-                    const productErrors = Array.from(validationErrors.entries()).filter(([key]) =>
-                      key.startsWith(`${product.sku}-`)
-                    )
 
                     return (
                       <React.Fragment key={product.sku}>
