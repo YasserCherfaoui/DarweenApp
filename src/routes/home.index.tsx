@@ -266,7 +266,9 @@ function HomePage() {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20 md:py-32">
         <div
-          ref={(el) => (sectionRefs.current['hero'] = el)}
+          ref={(el) => {
+            sectionRefs.current['hero'] = el
+          }}
           className={`mx-auto max-w-5xl text-center transition-all duration-1000 ${
             isVisible['hero'] ? 'animate-in fade-in slide-in-from-bottom-4' : 'opacity-0'
           }`}
@@ -304,7 +306,9 @@ function HomePage() {
       <section className="bg-white dark:bg-gray-950">
         <div className="container mx-auto px-4 py-20">
           <div
-            ref={(el) => (sectionRefs.current['usecases'] = el)}
+            ref={(el) => {
+              sectionRefs.current['usecases'] = el
+            }}
             className={`mx-auto max-w-7xl transition-all duration-1000 ${
               isVisible['usecases'] ? 'animate-in fade-in slide-in-from-bottom-4' : 'opacity-0'
             }`}
@@ -361,7 +365,9 @@ function HomePage() {
       <section className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <div className="container mx-auto px-4 py-20 md:py-32">
           <div
-            ref={(el) => (sectionRefs.current['before-after'] = el)}
+            ref={(el) => {
+              sectionRefs.current['before-after'] = el
+            }}
             className={`mx-auto max-w-7xl transition-all duration-1000 ${
               isVisible['before-after'] ? 'animate-in fade-in slide-in-from-bottom-4' : 'opacity-0'
             }`}
@@ -589,7 +595,9 @@ function HomePage() {
           >
             <div className="container mx-auto px-4 py-20 md:py-32">
               <div
-                ref={(el) => (sectionRefs.current[sectionId] = el)}
+                ref={(el) => {
+                  sectionRefs.current[sectionId] = el
+                }}
                 className={`mx-auto max-w-6xl transition-all duration-1000 ${
                   isVisible[sectionId] ? 'animate-in fade-in slide-in-from-bottom-4' : 'opacity-0'
                 }`}
@@ -645,7 +653,9 @@ function HomePage() {
       <section className="bg-gray-100 dark:bg-gray-900">
         <div className="container mx-auto px-4 py-20">
           <div
-            ref={(el) => (sectionRefs.current['benefits'] = el)}
+            ref={(el) => {
+              sectionRefs.current['benefits'] = el
+            }}
             className={`mx-auto max-w-5xl transition-all duration-1000 ${
               isVisible['benefits'] ? 'animate-in fade-in slide-in-from-bottom-4' : 'opacity-0'
             }`}
@@ -683,7 +693,9 @@ function HomePage() {
       {/* Pricing Section (Placeholder) */}
       <section className="container mx-auto px-4 py-20">
         <div
-          ref={(el) => (sectionRefs.current['pricing'] = el)}
+          ref={(el) => {
+            sectionRefs.current['pricing'] = el
+          }}
           className={`mx-auto max-w-7xl transition-all duration-1000 ${
             isVisible['pricing'] ? 'animate-in fade-in slide-in-from-bottom-4' : 'opacity-0'
           }`}
@@ -787,7 +799,9 @@ function HomePage() {
       <section className="bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 py-20">
           <div
-            ref={(el) => (sectionRefs.current['cta'] = el)}
+            ref={(el) => {
+              sectionRefs.current['cta'] = el
+            }}
             className={`mx-auto max-w-4xl text-center transition-all duration-1000 ${
               isVisible['cta'] ? 'animate-in fade-in slide-in-from-bottom-4' : 'opacity-0'
             }`}
