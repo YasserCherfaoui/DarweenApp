@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { useColorTheme } from '@/hooks/use-color-theme'
 
 /**

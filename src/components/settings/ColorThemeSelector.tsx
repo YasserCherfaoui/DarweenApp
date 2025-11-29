@@ -1,7 +1,7 @@
 import { Palette, Check } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useColorTheme } from '@/hooks/use-color-theme'
-import { colorThemes, type ColorThemeId } from '@/lib/color-themes'
+import { colorThemes } from '@/lib/color-themes'
 import { cn } from '@/lib/utils'
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
