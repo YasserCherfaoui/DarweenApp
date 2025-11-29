@@ -34,19 +34,19 @@ export function Loading({
         <img 
           src="/SVG/Darween.svg" 
           alt="Darween Logo" 
-          className={cn("animate-pulse", logoSizeClasses[size])}
+          className={cn("animate-pulse dark:invert", logoSizeClasses[size])}
         />
       )}
       <Loader2 className={cn("animate-spin text-primary", sizeClasses[size])} />
       {message && (
-        <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>
+        <p className="text-sm text-muted-foreground">{message}</p>
       )}
     </div>
   )
 
   if (fullScreen) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         {content}
       </div>
     )

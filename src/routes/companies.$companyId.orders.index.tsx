@@ -1,16 +1,10 @@
-import { createRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
 import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
-import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
+import { ColumnVisibilityDropdown } from '@/components/orders/ColumnVisibilityDropdown'
 import { OrdersTable } from '@/components/orders/OrdersTable'
 import { OrderStatusCounters } from '@/components/orders/OrderStatusCounters'
-import { useOrders } from '@/hooks/queries/use-orders'
-import { useCompany } from '@/hooks/queries/use-companies'
-import { useSelectedCompany } from '@/hooks/use-selected-company'
-import { Plus, Package, ArrowLeft } from 'lucide-react'
-import { rootRoute } from '@/main'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -18,8 +12,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import type { OrderStatus, OrderSource } from '@/types/api'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useCompany } from '@/hooks/queries/use-companies'
+import { useOrders } from '@/hooks/queries/use-orders'
+import { useColumnVisibility } from '@/hooks/use-column-visibility'
+import { useSelectedCompany } from '@/hooks/use-selected-company'
+import { rootRoute } from '@/main'
+import type { OrderSource, OrderStatus } from '@/types/api'
+import { createRoute, Link, useNavigate } from '@tanstack/react-router'
+import { ArrowLeft, Package, Plus } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export const CompanyOrdersRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -39,7 +41,13 @@ function CompanyOrdersPage() {
   const [page, setPage] = useState(1)
   const limit = 20
 
-  const { data: ordersData, isLoading } = useOrders(Number(companyId), {
+  const {
+    columnVisibility,
+    toggleColumn,
+    resetToDefaults,
+  } = useColumnVisibility()
+
+  const { data: ordersData, isLoading, refetch } = useOrders(Number(companyId), {
     status: statusFilter,
     source: sourceFilter,
     date_from: dateFrom || undefined,
@@ -166,9 +174,21 @@ function CompanyOrdersPage() {
           </Card>
         ) : ordersData && ordersData.orders && ordersData.orders.length > 0 ? (
           <>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Orders List</h2>
+              <ColumnVisibilityDropdown
+                columnVisibility={columnVisibility}
+                onToggleColumn={toggleColumn}
+                onResetToDefaults={resetToDefaults}
+              />
+            </div>
             <OrdersTable
               orders={ordersData.orders}
               companyId={Number(companyId)}
+              columnVisibility={columnVisibility}
+              onOrderConfirmed={() => {
+                refetch()
+              }}
             />
             {/* Pagination */}
             {ordersData.total > limit && (

@@ -91,7 +91,7 @@ export function Sidebar() {
   return (
     <aside 
       className={cn(
-        "bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out",
+        "bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out",
         isCollapsed ? "w-16" : "w-64"
       )}
     >
@@ -101,14 +101,14 @@ export function Sidebar() {
             <img 
               src="/SVG/Darween.svg" 
               alt="Darween Logo" 
-              className={cn("flex-shrink-0", isCollapsed ? "h-8 w-8" : "h-10 w-10")}
+              className={cn("flex-shrink-0 dark:invert", isCollapsed ? "h-8 w-8" : "h-10 w-10")}
             />
             {!isCollapsed && (
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-gray-900 dark:text-white">
+                <span className="text-xl font-bold text-sidebar-foreground">
                   Darween ERP
                 </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-xs text-muted-foreground">
                   Admin Dashboard
                 </span>
               </div>
@@ -119,7 +119,7 @@ export function Sidebar() {
           {/* Global Navigation - Only show Dashboard, hide Companies in franchise portal */}
           {!isCollapsed && (
             <div className="px-3 pb-2">
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Main
               </p>
             </div>
@@ -144,8 +144,8 @@ export function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700',
+                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                   isCollapsed && 'justify-center'
                 )}
                 title={isCollapsed ? item.name : undefined}
@@ -160,13 +160,13 @@ export function Sidebar() {
           {portalNavigationSections.length > 0 && (
             <>
               <div className="pt-4 pb-2 px-3">
-                <div className="h-px bg-gray-200 dark:bg-gray-700" />
+                <div className="h-px bg-sidebar-border" />
               </div>
               {portalNavigationSections.map((section) => (
                 <div key={section.title} className="mb-4">
                   {!isCollapsed && (
                     <div className="px-3 py-2">
-                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         {section.title}
                       </p>
                     </div>
@@ -183,8 +183,8 @@ export function Sidebar() {
                         className={cn(
                           'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
                           isActive
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700',
+                            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                           isCollapsed && 'justify-center'
                         )}
                         title={isCollapsed ? item.name : undefined}

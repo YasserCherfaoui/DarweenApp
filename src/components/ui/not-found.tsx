@@ -18,19 +18,19 @@ export function NotFound({
   backLabel = 'Go back home'
 }: NotFoundProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="text-center space-y-6 max-w-md">
         <div className="flex justify-center">
           <img 
             src="/SVG/Darween.svg" 
             alt="Darween Logo" 
-            className="h-24 w-24 opacity-50"
+            className="h-24 w-24 opacity-50 dark:invert"
           />
         </div>
         <div className="space-y-2">
-          <h1 className="text-6xl font-bold text-gray-900 dark:text-white">404</h1>
-          <h2 className="text-2xl font-semibold text-gray-700 dark:text-gray-300">{title}</h2>
-          <p className="text-gray-600 dark:text-gray-400">{message}</p>
+          <h1 className="text-6xl font-bold text-foreground">404</h1>
+          <h2 className="text-2xl font-semibold text-foreground">{title}</h2>
+          <p className="text-muted-foreground">{message}</p>
         </div>
         {showBackButton && (
           <div className="flex gap-4 justify-center">

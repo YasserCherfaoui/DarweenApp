@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input'
 import { Lock, Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { rootRoute } from '@/main'
+import { ColorThemeSelector } from '@/components/settings/ColorThemeSelector'
 
 export const SettingsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -72,13 +73,15 @@ function SettingsPage() {
     <RoleBasedLayout>
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-bold text-foreground">
             Settings
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-muted-foreground mt-2">
             Manage your account settings and preferences
           </p>
         </div>
+
+        <ColorThemeSelector />
 
         <Card>
           <CardHeader>
@@ -111,7 +114,7 @@ function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           >
                             {showCurrentPassword ? (
                               <EyeOff className="h-4 w-4" />
@@ -147,7 +150,7 @@ function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => setShowNewPassword(!showNewPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           >
                             {showNewPassword ? (
                               <EyeOff className="h-4 w-4" />
@@ -183,7 +186,7 @@ function SettingsPage() {
                           <button
                             type="button"
                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                           >
                             {showConfirmPassword ? (
                               <EyeOff className="h-4 w-4" />

@@ -135,7 +135,7 @@ function AcceptInvitationPage() {
               <img 
                 src="/SVG/Darween.svg" 
                 alt="Darween Logo" 
-                className="h-16 w-16"
+                className="h-16 w-16 dark:invert"
               />
             </div>
             <CardTitle className="text-2xl font-bold text-center">Invalid Invitation</CardTitle>

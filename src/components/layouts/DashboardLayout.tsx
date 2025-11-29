@@ -35,16 +35,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex h-screen bg-background">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16 flex items-center justify-between px-6">
+          <header className="bg-card border-b border-border h-16 flex items-center justify-between px-6">
             <div className="flex items-center gap-6">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={toggleSidebar}
-                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className="text-muted-foreground hover:text-foreground"
                 aria-label="Toggle sidebar"
               >
                 <Menu className="h-5 w-5" />
@@ -53,9 +53,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <img 
                   src="/SVG/Darween.svg" 
                   alt="Darween Logo" 
-                  className="h-8 w-8"
+                  className="h-8 w-8 dark:invert"
                 />
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h1 className="text-xl font-semibold text-foreground">
                   Darween ERP
                 </h1>
               </div>

@@ -29,7 +29,7 @@ export default function Header() {
             <img
               src="/SVG/Darween.svg"
               alt="Darween Logo"
-              className="h-10"
+              className="h-10 dark:invert"
             />
           </Link>
         </h1>

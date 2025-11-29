@@ -80,7 +80,7 @@ export function ErrorDialog({
               <img 
                 src="/SVG/Darween.svg" 
                 alt="Darween Logo" 
-                className="h-12 w-12 opacity-50"
+                className="h-12 w-12 opacity-50 dark:invert"
               />
             </div>
             <div className="flex items-center gap-2">
