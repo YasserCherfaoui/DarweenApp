@@ -613,6 +613,44 @@ class ApiClient {
         method: 'DELETE',
       })
     },
+
+    bulkCreate: async (
+      companyId: number,
+      file: File
+    ): Promise<ApiResponse<{ products_created: number; variants_created: number; message: string }>> => {
+      const token = this.getAuthToken()
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      const headers: Record<string, string> = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      // Don't set Content-Type - let browser set it with boundary for FormData
+      
+      const response = await fetch(`${API_URL}/companies/${companyId}/products/bulk`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('user')
+          window.location.href = '/login'
+        }
+        const error = new Error(data.error?.message || 'An error occurred') as any
+        error.response = { data, status: response.status }
+        error.status = response.status
+        error.code = data.error?.code
+        throw error
+      }
+      
+      return data
+    },
   }
 
   // Product variant endpoints

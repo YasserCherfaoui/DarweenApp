@@ -32,6 +32,8 @@ import { EditProductRoute } from './routes/companies.$companyId.products.$produc
 import { BulkCreateVariantsRoute } from './routes/companies.$companyId.products.$productId.variants.bulk'
 import { CreateProductRoute } from './routes/companies.$companyId.products.create'
 import { CompanyProductsRoute } from './routes/companies.$companyId.products.index'
+import { BulkImportProductsRoute } from './routes/companies.$companyId.products.bulk-import'
+import { BulkImportPreviewRoute } from './routes/companies.$companyId.products.bulk-import.preview'
 import { SupplierDetailRoute } from './routes/companies.$companyId.suppliers.$supplierId'
 import { EditSupplierRoute } from './routes/companies.$companyId.suppliers.$supplierId.edit'
 import { CreateSupplierRoute } from './routes/companies.$companyId.suppliers.create'
@@ -107,6 +109,8 @@ const routeTree = rootRoute.addChildren([
   CompanyInventoryHistoryRoute,
   CompanyProductsRoute,
   CreateProductRoute,
+  BulkImportProductsRoute,
+  BulkImportPreviewRoute,
   ProductDetailsRoute,
   EditProductRoute,
   BulkCreateVariantsRoute,

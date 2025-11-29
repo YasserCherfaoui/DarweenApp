@@ -8,7 +8,7 @@ import { ProductsTable } from '@/components/products/ProductsTable'
 import { useProducts, useDeleteProduct } from '@/hooks/queries/use-products'
 import { useCompany } from '@/hooks/queries/use-companies'
 import { useSelectedCompany } from '@/hooks/use-selected-company'
-import { Plus, Package, ArrowLeft } from 'lucide-react'
+import { Plus, Package, ArrowLeft, Upload } from 'lucide-react'
 import { rootRoute } from '@/main'
 
 export const CompanyProductsRoute = createRoute({
@@ -62,12 +62,20 @@ function CompanyProductsPage() {
                 Manage your products and inventory
               </p>
             </div>
-            <Link to={`/companies/${companyId}/products/create` as any}>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Product
-              </Button>
-            </Link>
+            <div className="flex gap-2">
+              <Link to={`/companies/${companyId}/products/bulk-import` as any}>
+                <Button variant="outline">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Bulk Import
+                </Button>
+              </Link>
+              <Link to={`/companies/${companyId}/products/create` as any}>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  New Product
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
