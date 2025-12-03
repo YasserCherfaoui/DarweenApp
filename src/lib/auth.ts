@@ -14,10 +14,26 @@ export const login = async (data: LoginRequest) => {
 export const register = async (data: RegisterRequest) => {
   const response = await apiClient.auth.register(data)
   if (response.success && response.data) {
-    setAuthUser(response.data.user, response.data.token)
+    // Don't set auth user - registration now requires email verification
     return response.data
   }
   throw new Error(response.error?.message || 'Registration failed')
+}
+
+export const verifyEmail = async (code: string, email: string) => {
+  const response = await apiClient.auth.verifyEmail({ code, email })
+  if (response.success && response.data) {
+    return response.data
+  }
+  throw new Error(response.error?.message || 'Email verification failed')
+}
+
+export const resendVerificationEmail = async (email: string) => {
+  const response = await apiClient.auth.resendVerificationEmail({ email })
+  if (response.success && response.data) {
+    return response.data
+  }
+  throw new Error(response.error?.message || 'Failed to resend verification email')
 }
 
 export const logout = () => {

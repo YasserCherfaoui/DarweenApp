@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useUserRole } from '@/hooks/use-user-role'
 import type { Permission } from '@/types/api'
 import { AlertCircle, HelpCircle, Lock } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
 
 interface PermissionErrorProps {
   requiredPermission?: Permission
@@ -245,8 +246,9 @@ export function PermissionError({
               variant="default"
               className="flex-1"
               onClick={() => {
-                // Navigate to help or contact page if available
-                window.location.href = '/help'
+                // For now, navigate to dashboard or show contact info
+                // You can create a help page later
+                alert('Please contact your administrator for assistance.')
               }}
             >
               Get Help

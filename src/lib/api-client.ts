@@ -17,6 +17,7 @@ import type {
   CashDrawer,
   ChangePasswordRequest,
   ChangePasswordWithOTPRequest,
+  CheckCodeAvailabilityResponse,
   ClientStatus,
   CloseCashDrawerRequest,
   Company,
@@ -62,7 +63,10 @@ import type {
   RecordSupplierPaymentRequest,
   Refund,
   RegisterRequest,
+  RegisterResponse,
   ReleaseStockRequest,
+  ResendVerificationRequest,
+  ResendVerificationResponse,
   ReserveStockRequest,
   SMTPConfigListResponse,
   SMTPConfigResponse,
@@ -104,6 +108,8 @@ import type {
   UserWithRole,
   ValidateInvitationResponse,
   ValidateOTPResponse,
+  VerifyEmailRequest,
+  VerifyEmailResponse,
   VerifyEntryBillRequest,
   WarehouseBill,
   WooCommerceWebhookConfig,
@@ -148,7 +154,8 @@ class ApiClient {
       if (response.status === 401) {
         localStorage.removeItem('auth_token')
         localStorage.removeItem('user')
-        window.location.href = '/login'
+        // Dispatch custom event instead of hard redirect
+        window.dispatchEvent(new CustomEvent('auth:unauthorized'))
       }
       
       // Enhanced error with permission context
@@ -185,8 +192,26 @@ class ApiClient {
 
     register: async (
       data: RegisterRequest
-    ): Promise<ApiResponse<AuthResponse>> => {
+    ): Promise<ApiResponse<RegisterResponse>> => {
       return this.request('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+
+    verifyEmail: async (
+      data: VerifyEmailRequest
+    ): Promise<ApiResponse<VerifyEmailResponse>> => {
+      return this.request('/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+
+    resendVerificationEmail: async (
+      data: ResendVerificationRequest
+    ): Promise<ApiResponse<ResendVerificationResponse>> => {
+      return this.request('/auth/resend-verification', {
         method: 'POST',
         body: JSON.stringify(data),
       })
@@ -289,6 +314,12 @@ class ApiClient {
         method: 'POST',
         body: JSON.stringify(data),
       })
+    },
+
+    checkCodeAvailability: async (
+      code: string
+    ): Promise<ApiResponse<CheckCodeAvailabilityResponse>> => {
+      return this.request(`/companies/check-code?code=${encodeURIComponent(code)}`)
     },
 
     update: async (
@@ -640,7 +671,8 @@ class ApiClient {
         if (response.status === 401) {
           localStorage.removeItem('auth_token')
           localStorage.removeItem('user')
-          window.location.href = '/login'
+          // Dispatch custom event instead of hard redirect
+          window.dispatchEvent(new CustomEvent('auth:unauthorized'))
         }
         const error = new Error(data.error?.message || 'An error occurred') as any
         error.response = { data, status: response.status }
@@ -1423,7 +1455,8 @@ class ApiClient {
           if (response.status === 401) {
             localStorage.removeItem('auth_token')
             localStorage.removeItem('user')
-            window.location.href = '/login'
+            // Dispatch custom event instead of hard redirect
+            window.dispatchEvent(new CustomEvent('auth:unauthorized'))
           }
           throw new Error('Failed to fetch receipt')
         }

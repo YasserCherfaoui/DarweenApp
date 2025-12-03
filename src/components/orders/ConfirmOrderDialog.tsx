@@ -1,27 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Command,
   CommandEmpty,
@@ -30,7 +8,27 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -40,16 +38,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { cn } from '@/lib/utils'
-import { Check, ChevronsUpDown, Plus, X } from 'lucide-react'
-import type { Order, ConfirmOrderRequest, ConfirmOrderItemRequest, OrderItem } from '@/types/api'
-import { apiClient } from '@/lib/api-client'
-import { toast } from 'sonner'
-import { useYalidineWilayas, useYalidineCommunes, useYalidineCenters } from '@/hooks/queries/use-yalidine-api'
-import { useYalidineConfigs } from '@/hooks/queries/use-yalidine-configs'
+import { Textarea } from '@/components/ui/textarea'
 import { useDeliveryFee } from '@/hooks/queries/use-orders'
 import { useProducts } from '@/hooks/queries/use-products'
-import type { Product, ProductVariant } from '@/types/api'
+import { useYalidineCenters, useYalidineCommunes, useYalidineWilayas } from '@/hooks/queries/use-yalidine-api'
+import { useYalidineConfigs } from '@/hooks/queries/use-yalidine-configs'
+import { apiClient } from '@/lib/api-client'
+import { cn } from '@/lib/utils'
+import type { ConfirmOrderItemRequest, ConfirmOrderRequest, Order, OrderItem, Product, ProductVariant } from '@/types/api'
+import { Check, ChevronsUpDown, Plus, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 
 interface OrderItemTableRowProps {
   index: number
@@ -179,7 +178,14 @@ function OrderItemTableRow({
             type="number"
             step="0.01"
             min="0"
-            value={item.confirmed_price ?? orderItem?.price ?? 0}
+            value={
+              // If variant is selected and confirmed_price is 0 or not set, use product's base_retail_price
+              selectedVariant && (item.confirmed_price === undefined || item.confirmed_price === null || item.confirmed_price === 0)
+                ? selectedVariant.product?.base_retail_price ?? 0
+                : item.confirmed_price !== undefined && item.confirmed_price !== null
+                  ? item.confirmed_price
+                  : orderItem?.price ?? 0
+            }
             onChange={(e) => onUpdatePrice(parseFloat(e.target.value) || 0)}
             required
             className="w-32"
@@ -289,15 +295,7 @@ export function ConfirmOrderDialog({
   // Initialize all fields from order when it changes
   useEffect(() => {
     if (order) {
-      // Initialize items from order
-      const initialItems: ConfirmOrderItemRequest[] = order.items.map((item) => ({
-        id: item.id,
-        confirmed_quantity: item.confirmed_quantity ?? item.quantity,
-        confirmed_price: item.confirmed_price ?? item.price,
-      }))
-      setItems(initialItems)
-      
-      // Initialize selected variants from order items
+      // Initialize selected variants from order items first (needed for price calculation)
       const initialVariants = new Map<number, number>()
       order.items.forEach((item) => {
         if (item.product_variant_id) {
@@ -305,6 +303,27 @@ export function ConfirmOrderDialog({
         }
       })
       setSelectedVariants(initialVariants)
+      
+      // Initialize items from order
+      // If item has a variant and no confirmed_price, use product's base_retail_price
+      const initialItems: ConfirmOrderItemRequest[] = order.items.map((item) => {
+        let price = item.confirmed_price ?? item.price
+        
+        // If no confirmed_price and item has a variant, try to get base_retail_price from product
+        if (!item.confirmed_price && item.product_variant_id && allVariants.length > 0) {
+          const variant = allVariants.find((v) => v.id === item.product_variant_id)
+          if (variant?.product?.base_retail_price !== undefined) {
+            price = variant.product.base_retail_price
+          }
+        }
+        
+        return {
+          id: item.id,
+          confirmed_quantity: item.confirmed_quantity ?? item.quantity,
+          confirmed_price: price,
+        }
+      })
+      setItems(initialItems)
       
       // Initialize shipping fields
       setShippingProvider((order.shipping_provider === 'yalidine' || order.shipping_provider === 'my_delivery') ? order.shipping_provider : 'yalidine')
@@ -336,7 +355,7 @@ export function ConfirmOrderDialog({
       // Reset delivery fee initialization
       deliveryFeeInitializedRef.current = false
     }
-  }, [order, wilayasData])
+  }, [order, wilayasData, allVariants])
 
   // Set default from_wilaya_id from Yalidine config (only once)
   const defaultFromWilayaId = useMemo(() => {
@@ -394,6 +413,21 @@ export function ConfirmOrderDialog({
       return
     }
 
+    // Filter out items with negative IDs (new items that can't be confirmed)
+    const validItems = items.filter((item) => item.id > 0)
+    const excludedItems = items.filter((item) => item.id < 0)
+
+    if (excludedItems.length > 0) {
+      toast.warning(
+        `${excludedItems.length} new item(s) will be excluded from confirmation. Only existing order items can be confirmed.`
+      )
+    }
+
+    if (validItems.length === 0) {
+      toast.error('At least one valid order item is required to confirm the order')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const request: ConfirmOrderRequest = {
@@ -402,7 +436,15 @@ export function ConfirmOrderDialog({
         commune_id: deliveryType === 'home' ? communeId : undefined,
         center_id: deliveryType === 'stop_desk' ? centerId : undefined,
         second_delivery_cost: secondDeliveryCost,
-        items,
+        from_wilaya_id: fromWilayaId,
+        customer_full_name: customerFullName || undefined,
+        customer_phone: customerPhone || undefined,
+        customer_phone2: customerPhone2 || undefined,
+        customer_address: customerAddress || undefined,
+        customer_state: shippingWilayaName || undefined,
+        customer_comments: customerComments || undefined,
+        discount: discount || undefined,
+        items: validItems,
       }
 
       await apiClient.orders.confirm(companyId, order.id, request)
@@ -416,14 +458,39 @@ export function ConfirmOrderDialog({
     }
   }
 
+  // Helper function to get the effective price for an item
+  const getItemPrice = useMemo(() => {
+    return (item: ConfirmOrderItemRequest, orderItem: OrderItem | null) => {
+      // If confirmed_price is explicitly set (including 0), use it
+      if (item.confirmed_price !== undefined && item.confirmed_price !== null) {
+        return item.confirmed_price
+      }
+      // Otherwise, try to get price from selected variant's product
+      const variantId = selectedVariants.get(item.id)
+      if (variantId) {
+        const variant = allVariants.find((v) => v.id === variantId)
+        if (variant?.product?.base_retail_price !== undefined) {
+          return variant.product.base_retail_price
+        }
+      }
+      // Fallback to orderItem price or 0
+      return orderItem?.price ?? 0
+    }
+  }, [selectedVariants, allVariants])
+
   const calculateTotal = useMemo(() => {
-    const productTotal = items.reduce(
-      (sum, item) =>
-        sum + (item.confirmed_quantity ?? 0) * (item.confirmed_price ?? 0),
-      0
-    )
+    // Only include items that have a selected variant
+    const productTotal = items.reduce((sum, item) => {
+      const hasSelectedVariant = selectedVariants.has(item.id)
+      if (!hasSelectedVariant) {
+        return sum
+      }
+      const orderItem = order?.items.find((i) => i.id === item.id) || null
+      const price = getItemPrice(item, orderItem)
+      return sum + (item.confirmed_quantity ?? 0) * price
+    }, 0)
     return productTotal + secondDeliveryCost - discount
-  }, [items, secondDeliveryCost, discount])
+  }, [items, selectedVariants, secondDeliveryCost, discount, getItemPrice, order])
 
   // Generate a temporary ID for new items (negative to distinguish from real order item IDs)
   const getNextTempId = useMemo(() => {
@@ -478,18 +545,20 @@ export function ConfirmOrderDialog({
         <div className="space-y-6 mt-4">
           {/* Main sections in flex layout */}
           <div className="flex gap-6">
-            {/* Left column: Shipping */}
+            {/* Left column: Shipping & Customer Details */}
             <div className="flex-1 min-w-0 space-y-6">
-              {/* Shipping Section */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Shipping</CardTitle>
+                  <CardTitle>Shipping & Customer Details</CardTitle>
                   <CardDescription>
-                    Select shipping provider and delivery details
+                    Configure shipping and customer information for this order
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <CardContent className="space-y-6">
+                  {/* Shipping Section */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Shipping</h3>
+                    <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="shipping_provider">
                         Shipping Provider <span className="text-red-500">*</span>
@@ -673,21 +742,12 @@ export function ConfirmOrderDialog({
                       </div>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-            </div>
+                  </div>
 
-            {/* Middle column: Customer Details */}
-            <div className="flex-1 min-w-0 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Customer Details</CardTitle>
-                  <CardDescription>
-                    Enter customer information for this order
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-4">
+                  {/* Customer Details Section */}
+                  <div className="pt-4 border-t">
+                    <h3 className="text-lg font-semibold mb-4">Customer Details</h3>
+                    <div className="space-y-4">
                     <div>
                       <Label htmlFor="customer_full_name">
                         Full Name <span className="text-red-500">*</span>
@@ -769,6 +829,7 @@ export function ConfirmOrderDialog({
                       />
                     </div>
                   </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -847,14 +908,30 @@ export function ConfirmOrderDialog({
                               selectedVariant={selectedVariant}
                               allVariants={allVariants}
                               onUpdateQuantity={(value) => {
-                                const newItems = [...items]
-                                newItems[actualIndex].confirmed_quantity = value
-                                setItems(newItems)
+                                setItems((prevItems) => {
+                                  const newItems = [...prevItems]
+                                  const itemIndex = newItems.findIndex((i) => i.id === item.id)
+                                  if (itemIndex !== -1) {
+                                    newItems[itemIndex] = {
+                                      ...newItems[itemIndex],
+                                      confirmed_quantity: value,
+                                    }
+                                  }
+                                  return newItems
+                                })
                               }}
                               onUpdatePrice={(value) => {
-                                const newItems = [...items]
-                                newItems[actualIndex].confirmed_price = value
-                                setItems(newItems)
+                                setItems((prevItems) => {
+                                  const newItems = [...prevItems]
+                                  const itemIndex = newItems.findIndex((i) => i.id === item.id)
+                                  if (itemIndex !== -1) {
+                                    newItems[itemIndex] = {
+                                      ...newItems[itemIndex],
+                                      confirmed_price: value,
+                                    }
+                                  }
+                                  return newItems
+                                })
                               }}
                               onSelectVariant={(variant) => {
                                 // Store the selected variant ID
@@ -864,16 +941,23 @@ export function ConfirmOrderDialog({
                                   return next
                                 })
                                 // Update the price when variant is selected
-                                // Use retail_price if available, otherwise use the order item price
-                                const variantPrice = variant.retail_price ?? variant.wholesale_price ?? orderItem?.price ?? 0
-                                const newItems = [...items]
-                                newItems[actualIndex].confirmed_price = variantPrice
-                                setItems(newItems)
+                                // Use product's base_retail_price as default, or fallback to orderItem price or 0
+                                const variantPrice = variant.product?.base_retail_price ?? orderItem?.price ?? 0
+                                setItems((prevItems) => {
+                                  const newItems = [...prevItems]
+                                  const itemIndex = newItems.findIndex((i) => i.id === item.id)
+                                  if (itemIndex !== -1) {
+                                    newItems[itemIndex] = {
+                                      ...newItems[itemIndex],
+                                      confirmed_price: variantPrice,
+                                    }
+                                  }
+                                  return newItems
+                                })
                               }}
                               onRemove={() => {
                                 // Remove the item from the list
-                                const newItems = items.filter((i) => i.id !== item.id)
-                                setItems(newItems)
+                                setItems((prevItems) => prevItems.filter((i) => i.id !== item.id))
                                 // Remove from selected variants if it exists
                                 setSelectedVariants((prev) => {
                                   const next = new Map(prev)
@@ -914,12 +998,15 @@ export function ConfirmOrderDialog({
                     <span>Product Total:</span>
                     <span className="font-medium">
                       {items
-                        .reduce(
-                          (sum, item) =>
-                            sum +
-                            (item.confirmed_quantity ?? 0) * (item.confirmed_price ?? 0),
-                          0
-                        )
+                        .reduce((sum, item) => {
+                          const hasSelectedVariant = selectedVariants.has(item.id)
+                          if (!hasSelectedVariant) {
+                            return sum
+                          }
+                          const orderItem = order?.items.find((i) => i.id === item.id) || null
+                          const price = getItemPrice(item, orderItem)
+                          return sum + (item.confirmed_quantity ?? 0) * price
+                        }, 0)
                         .toFixed(2)}{' '}
                       DZD
                     </span>

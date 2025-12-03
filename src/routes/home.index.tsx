@@ -22,6 +22,55 @@ import {
   Zap,
 } from 'lucide-react'
 
+// Reusable icon components from SourceIcon
+const ShopifyIcon = ({ className }: { className?: string }) => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 256 292"
+    xmlns="http://www.w3.org/2000/svg"
+    preserveAspectRatio="xMidYMid"
+    className={className}
+  >
+    <path
+      d="M223.774 57.34c-.201-1.46-1.48-2.268-2.537-2.357-1.055-.088-23.383-1.743-23.383-1.743s-15.507-15.395-17.209-17.099c-1.703-1.703-5.029-1.185-6.32-.805-.19.056-3.388 1.043-8.678 2.68-5.18-14.906-14.322-28.604-30.405-28.604-.444 0-.901.018-1.358.044C129.31 3.407 123.644.779 118.75.779c-37.465 0-55.364 46.835-60.976 70.635-14.558 4.511-24.9 7.718-26.221 8.133-8.126 2.549-8.383 2.805-9.45 10.462C21.3 95.806.038 260.235.038 260.235l165.678 31.042 89.77-19.42S223.973 58.8 223.775 57.34zM156.49 40.848l-14.019 4.339c.005-.988.01-1.96.01-3.023 0-9.264-1.286-16.723-3.349-22.636 8.287 1.04 13.806 10.469 17.358 21.32zm-27.638-19.483c2.304 5.773 3.802 14.058 3.802 25.238 0 .572-.005 1.095-.01 1.624-9.117 2.824-19.024 5.89-28.953 8.966 5.575-21.516 16.025-31.908 25.161-35.828zm-11.131-10.537c1.617 0 3.246.549 4.805 1.622-12.007 5.65-24.877 19.88-30.312 48.297l-22.886 7.088C75.694 46.16 90.81 10.828 117.72 10.828z"
+      fill="#95BF46"
+    />
+    <path
+      d="M221.237 54.983c-1.055-.088-23.383-1.743-23.383-1.743s-15.507-15.395-17.209-17.099c-.637-.634-1.496-.959-2.394-1.099l-12.527 256.233 89.762-19.418S223.972 58.8 223.774 57.34c-.201-1.46-1.48-2.268-2.537-2.357"
+      fill="#5E8E3E"
+    />
+    <path
+      d="M135.242 104.585l-11.069 32.926s-9.698-5.176-21.586-5.176c-17.428 0-18.305 10.937-18.305 13.693 0 15.038 39.2 20.8 39.2 56.024 0 27.713-17.577 45.558-41.277 45.558-28.44 0-42.984-17.7-42.984-17.7l7.615-25.16s14.95 12.835 27.565 12.835c8.243 0 11.596-6.49 11.596-11.232 0-19.616-32.16-20.491-32.16-52.724 0-27.129 19.472-53.382 58.778-53.382 15.145 0 22.627 4.338 22.627 4.338"
+      fill="#FFF"
+    />
+  </svg>
+)
+
+const WooCommerceIcon = ({ className }: { className?: string }) => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path
+      d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"
+      fill="#96588A"
+    />
+    <path
+      d="M7 7l2.5 8 1.5-5 1.5 5L15 7"
+      stroke="#FFF"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+  </svg>
+)
+
 export const HomeRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/home',
@@ -252,6 +301,35 @@ function HomePage() {
             />
             <span className="text-xl font-bold">Darween ERP</span>
           </Link>
+          
+          {/* Navigation Items */}
+          <nav className="hidden md:flex items-center gap-6">
+            <a 
+              href="#features" 
+              className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
+            >
+              Features
+            </a>
+            <a 
+              href="#use-cases" 
+              className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
+            >
+              Use Cases
+            </a>
+            <a 
+              href="#benefits" 
+              className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
+            >
+              Benefits
+            </a>
+            <a 
+              href="#pricing" 
+              className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
+            >
+              Pricing
+            </a>
+          </nav>
+
           <div className="flex items-center gap-4">
             <Button variant="ghost" asChild>
               <Link to="/login">Sign In</Link>
@@ -264,12 +342,37 @@ function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 md:py-32">
+      <section className="container mx-auto px-4 py-20 md:py-32 relative overflow-hidden">
+        {/* Floating Logos Background */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute animate-float opacity-10 dark:opacity-5"
+              style={{
+                left: `${(i * 15) % 90}%`,
+                top: `${(i * 20) % 80}%`,
+                animationDelay: `${i * 0.5}s`,
+                animationDuration: `${6 + (i % 3)}s`,
+              }}
+            >
+              <img
+                src="/SVG/Darween.svg"
+                alt="Darween Logo"
+                className="h-16 w-16 md:h-24 md:w-24 dark:invert"
+                style={{
+                  transform: `rotate(${i * 45}deg)`,
+                }}
+              />
+            </div>
+          ))}
+        </div>
+
         <div
           ref={(el) => {
             sectionRefs.current['hero'] = el
           }}
-          className={`mx-auto max-w-5xl text-center transition-all duration-1000 ${
+          className={`mx-auto max-w-5xl text-center transition-all duration-1000 relative z-10 ${
             isVisible['hero'] ? 'animate-in fade-in slide-in-from-bottom-4' : 'opacity-0'
           }`}
         >
@@ -302,8 +405,52 @@ function HomePage() {
         </div>
       </section>
 
+      {/* Supported Stores Section */}
+      <section className="bg-white dark:bg-gray-950 border-y">
+        <div className="container mx-auto px-4 py-12">
+          <div
+            ref={(el) => {
+              sectionRefs.current['supported-stores'] = el
+            }}
+            className={`mx-auto max-w-5xl text-center transition-all duration-1000 ${
+              isVisible['supported-stores'] ? 'animate-in fade-in slide-in-from-bottom-4' : 'opacity-0'
+            }`}
+          >
+            <p className="mb-8 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Seamlessly Integrates With
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16">
+              {/* Shopify Logo */}
+              <div className="group flex items-center gap-4 transition-all duration-300 hover:scale-110">
+                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white dark:bg-gray-800 p-3 shadow-md">
+                  <ShopifyIcon className="h-full w-full" />
+                </div>
+                <div className="text-left">
+                  <div className="text-2xl font-bold text-[#95BF46]">Shopify</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">E-commerce Platform</div>
+                </div>
+              </div>
+
+              {/* WooCommerce Logo */}
+              <div className="group flex items-center gap-4 transition-all duration-300 hover:scale-110">
+                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-white dark:bg-gray-800 p-3 shadow-md">
+                  <WooCommerceIcon className="h-full w-full" />
+                </div>
+                <div className="text-left">
+                  <div className="text-2xl font-bold text-[#96588A]">WooCommerce</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">WordPress E-commerce</div>
+                </div>
+              </div>
+            </div>
+            <p className="mt-8 text-sm text-gray-600 dark:text-gray-400">
+              Automatic order synchronization, real-time inventory updates, and one-click fulfillment
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Use Cases Section */}
-      <section className="bg-white dark:bg-gray-950">
+      <section id="use-cases" className="bg-white dark:bg-gray-950">
         <div className="container mx-auto px-4 py-20">
           <div
             ref={(el) => {
@@ -591,6 +738,7 @@ function HomePage() {
         return (
           <section
             key={feature.id}
+            id={index === 0 ? 'features' : undefined}
             className={isEven ? 'bg-white dark:bg-gray-950' : 'bg-gray-50 dark:bg-gray-900'}
           >
             <div className="container mx-auto px-4 py-20 md:py-32">
@@ -650,7 +798,7 @@ function HomePage() {
       })}
 
       {/* Benefits Section */}
-      <section className="bg-gray-100 dark:bg-gray-900">
+      <section id="benefits" className="bg-gray-100 dark:bg-gray-900">
         <div className="container mx-auto px-4 py-20">
           <div
             ref={(el) => {
@@ -691,7 +839,7 @@ function HomePage() {
       </section>
 
       {/* Pricing Section (Placeholder) */}
-      <section className="container mx-auto px-4 py-20">
+      <section id="pricing" className="container mx-auto px-4 py-20">
         <div
           ref={(el) => {
             sectionRefs.current['pricing'] = el

@@ -265,6 +265,8 @@ export interface User {
   email: string
   first_name: string
   last_name: string
+  email_verified: boolean
+  email_verified_at?: string
   is_active: boolean
   current_role?: UserRole // Role in the currently selected company context
 }
@@ -292,6 +294,11 @@ export interface AuthResponse {
   token: string
   user: User
   role?: UserRole // User's role in the default/first company
+}
+
+export interface RegisterResponse {
+  message: string
+  email: string
 }
 
 export interface ValidateInvitationResponse {
@@ -338,6 +345,24 @@ export interface ChangePasswordRequest {
   new_password: string
 }
 
+export interface VerifyEmailRequest {
+  code: string
+  email: string
+}
+
+export interface VerifyEmailResponse {
+  message: string
+  email: string
+}
+
+export interface ResendVerificationRequest {
+  email: string
+}
+
+export interface ResendVerificationResponse {
+  message: string
+}
+
 // Portal types
 export type PortalType = 'company' | 'franchise'
 
@@ -361,6 +386,11 @@ export interface Company {
   code: string
   description?: string
   erp_url?: string
+  registration_number?: string
+  tax_id?: string
+  legal_address?: string
+  phone?: string
+  website?: string
   is_active: boolean
   created_at?: string
   updated_at?: string
@@ -372,6 +402,16 @@ export interface CreateCompanyRequest {
   code: string
   description?: string
   erp_url?: string
+  registration_number?: string
+  tax_id?: string
+  legal_address?: string
+  phone?: string
+  website?: string
+}
+
+export interface CheckCodeAvailabilityResponse {
+  available: boolean
+  suggestions?: string[]
 }
 
 export interface UpdateCompanyRequest {
@@ -1444,6 +1484,14 @@ export interface ConfirmOrderRequest {
   commune_id?: number
   center_id?: number
   second_delivery_cost: number
+  from_wilaya_id?: number
+  customer_full_name?: string
+  customer_phone?: string
+  customer_phone2?: string
+  customer_address?: string
+  customer_state?: string
+  customer_comments?: string
+  discount?: number
   items: ConfirmOrderItemRequest[]
 }
 

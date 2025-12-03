@@ -23,9 +23,9 @@ export const useAuth = () => {
 
   const registerMutation = useMutation({
     mutationFn: (data: RegisterRequest) => registerApi(data),
-    onSuccess: () => {
-      toast.success('Registration successful!')
-      navigate({ to: '/companies' })
+    onSuccess: (data) => {
+      toast.success(data.message || 'Registration successful! Please check your email.')
+      // Don't navigate - let the register page handle the success state
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Registration failed')

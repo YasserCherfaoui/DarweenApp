@@ -1,14 +1,15 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useAuth } from '@/hooks/use-auth'
 import { useRecaptcha } from '@/hooks/use-recaptcha'
 import { rootRoute } from '@/main'
 import { useForm } from '@tanstack/react-form'
-import { Link, createRoute } from '@tanstack/react-router'
+import { Link, createRoute, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { executeRecaptcha } from '@/lib/recaptcha'
+import { Mail } from 'lucide-react'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -22,7 +23,11 @@ export const LoginRoute = createRoute({
 })
 
 function LoginPage() {
-  const { login, isLoggingIn } = useAuth()
+  const navigate = useNavigate()
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isEmailNotVerified, setIsEmailNotVerified] = useState(false)
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string>('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Load reCAPTCHA on mount, cleanup on unmount (auth page only)
   useRecaptcha()
@@ -33,22 +38,49 @@ function LoginPage() {
       password: '',
     },
     onSubmit: async ({ value }) => {
+      setErrorMessage(null)
+      setIsEmailNotVerified(false)
+      setIsSubmitting(true)
       try {
         // Execute reCAPTCHA v3 before submitting
         const recaptchaToken = await executeRecaptcha('login')
         
-        // Include reCAPTCHA token in login request
+        // Call login API directly
+        const { login } = await import('@/lib/auth')
         await login({
           ...value,
           recaptcha_token: recaptchaToken || undefined,
         })
-      } catch (error) {
-        console.error('reCAPTCHA error:', error)
-        // Still attempt login even if reCAPTCHA fails (backend will handle it)
-        await login(value)
+        
+        // Navigate to companies page on success
+        navigate({ to: '/companies' })
+      } catch (error: any) {
+        console.error('Login error:', error)
+        const errorMsg = error.message || 'Login failed. Please try again.'
+        setErrorMessage(errorMsg)
+        
+        // Check if error is about unverified email
+        if (errorMsg.toLowerCase().includes('email not verified')) {
+          setIsEmailNotVerified(true)
+          setUnverifiedEmail(value.email)
+        }
+      } finally {
+        setIsSubmitting(false)
       }
     },
   })
+
+  const handleResendVerification = async () => {
+    try {
+      const { resendVerificationEmail } = await import('@/lib/auth')
+      await resendVerificationEmail(unverifiedEmail)
+      setErrorMessage(null)
+      setIsEmailNotVerified(false)
+      alert('Verification email sent! Please check your inbox.')
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Failed to resend verification email.')
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
@@ -75,6 +107,46 @@ function LoginPage() {
             }}
             className="space-y-4"
           >
+            {errorMessage && (
+              <div className="p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <svg
+                    className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-red-900 dark:text-red-100">
+                      Login Failed
+                    </h4>
+                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                      {errorMessage}
+                    </p>
+                    {isEmailNotVerified && (
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        className="text-red-700 dark:text-red-300 p-0 h-auto mt-2"
+                        onClick={handleResendVerification}
+                      >
+                        <Mail className="mr-2 h-3 w-3" />
+                        Resend verification email
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <form.Field
               name="email"
               validators={{
@@ -99,7 +171,7 @@ function LoginPage() {
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    disabled={isLoggingIn}
+                    disabled={isSubmitting}
                     autoComplete="email"
                   />
                   {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
@@ -135,7 +207,7 @@ function LoginPage() {
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    disabled={isLoggingIn}
+                    disabled={isSubmitting}
                     autoComplete="current-password"
                   />
                   {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
@@ -157,9 +229,9 @@ function LoginPage() {
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={isLoggingIn || !formState.canSubmit || formState.isSubmitting}
+                  disabled={isSubmitting || !formState.canSubmit || formState.isSubmitting}
                 >
-                  {isLoggingIn ? 'Signing in...' : 'Sign in'}
+                  {isSubmitting ? 'Signing in...' : 'Sign in'}
                 </Button>
               )}
             </form.Subscribe>
