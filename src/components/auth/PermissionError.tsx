@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useUserRole } from '@/hooks/use-user-role'
 import type { Permission } from '@/types/api'
 import { AlertCircle, HelpCircle, Lock } from 'lucide-react'
-import { useNavigate } from '@tanstack/react-router'
 
 interface PermissionErrorProps {
   requiredPermission?: Permission

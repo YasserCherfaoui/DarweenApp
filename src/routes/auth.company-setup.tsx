@@ -7,7 +7,7 @@ import { useDebounce } from '@/hooks/use-debounce'
 import { apiClient } from '@/lib/api-client'
 import { rootRoute } from '@/main'
 import { setAuthUser } from '@/stores/auth-store'
-import type { CreateCompanyRequest, User } from '@/types/api'
+import type { User } from '@/types/api'
 import { useForm } from '@tanstack/react-form'
 import { createRoute, useNavigate } from '@tanstack/react-router'
 import { AlertCircle, Building2, CheckCircle2, FileText, Loader2 } from 'lucide-react'
@@ -39,7 +39,7 @@ function CompanySetupPage() {
   const [codeSuggestions, setCodeSuggestions] = useState<string[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const form = useForm<CreateCompanyRequest>({
+  const form = useForm({
     defaultValues: {
       name: '',
       code: '',
