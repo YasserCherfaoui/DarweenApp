@@ -54,6 +54,8 @@ import type {
   OrderFilters,
   PaginatedResponse,
   PaginationParams,
+  PasswordResetRequest,
+  PasswordResetResponse,
   Payment,
   ProcessRefundRequest,
   Product,
@@ -258,6 +260,15 @@ class ApiClient {
       data: ChangePasswordWithOTPRequest
     ): Promise<ApiResponse<{ message: string }>> => {
       return this.request('/auth/otp/change-password', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    },
+
+    requestPasswordReset: async (
+      data: PasswordResetRequest
+    ): Promise<ApiResponse<PasswordResetResponse>> => {
+      return this.request('/auth/password-reset/request', {
         method: 'POST',
         body: JSON.stringify(data),
       })

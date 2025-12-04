@@ -1,3 +1,6 @@
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -5,8 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
   Table,
@@ -16,9 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
 import type { WarehouseBill, WarehouseBillItem } from '@/types/api'
+import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
 
 interface WarehouseBillDetailsDialogProps {
   open: boolean
@@ -189,13 +189,15 @@ export function WarehouseBillDetailsDialog({
                     <TableCell>
                       <div>
                         <div className="font-medium">
-                          {item.variant_name ||
-                            item.product_name ||
-                            `Variant #${item.product_variant_id}`}
+                          {item.product_name && item.variant_name
+                            ? `${item.product_name} - ${item.variant_name}`
+                            : item.variant_name ||
+                              item.product_name ||
+                              `Variant #${item.product_variant_id}`}
                         </div>
                         {item.variant_sku && (
-                          <div className="text-sm text-gray-500">
-                            SKU: {item.variant_sku}
+                          <div className="text-sm font-bold mt-1">
+                            {item.variant_sku}
                           </div>
                         )}
                         {item.discrepancy_notes && (

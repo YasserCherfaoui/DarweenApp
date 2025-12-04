@@ -1,10 +1,11 @@
-import { createRoute, Link } from '@tanstack/react-router'
+import { createRoute, Link, redirect } from '@tanstack/react-router'
 import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CompanyCard } from '@/components/companies/CompanyCard'
 import { useCompanies } from '@/hooks/queries/use-companies'
+import { portalStore } from '@/stores/portal-store'
 import { Plus, Building2 } from 'lucide-react'
 import { rootRoute } from '@/main'
 
@@ -12,6 +13,15 @@ export const CompaniesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/companies',
   component: CompaniesPage,
+  beforeLoad: async () => {
+    const portalState = portalStore.state
+    if (portalState.selectedPortalType === 'franchise') {
+      throw redirect({
+        to: '/',
+        replace: true,
+      })
+    }
+  },
 })
 
 function CompaniesPage() {

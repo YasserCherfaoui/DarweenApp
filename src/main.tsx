@@ -16,6 +16,7 @@ import * as TanStackQueryProvider from './integrations/tanstack-query/root-provi
 import { AcceptInvitationRoute } from './routes/auth.accept-invitation'
 import { ChangePasswordOTPRoute } from './routes/auth.change-password-otp'
 import { CompanySetupRoute } from './routes/auth.company-setup'
+import { ForgotPasswordRoute } from './routes/auth.forgot-password'
 import { LoginRoute } from './routes/auth.login'
 import { RegisterRoute } from './routes/auth.register'
 import { SetupAccountRoute } from './routes/auth.setup-account'
@@ -94,6 +95,7 @@ const routeTree = rootRoute.addChildren([
   HomeRoute,
   LoginRoute,
   RegisterRoute,
+  ForgotPasswordRoute,
   VerifyEmailRoute,
   VerificationSuccessRoute,
   CompanySetupRoute,

@@ -1,20 +1,15 @@
-import { createRoute, useParams, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
 import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
 import { Button } from '@/components/ui/button'
-import { Loading } from '@/components/ui/loading'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft } from 'lucide-react'
+import { Loading } from '@/components/ui/loading'
 import { WarehouseBillTable } from '@/components/warehousebills/WarehouseBillTable'
-import { WarehouseBillDetailsDialog } from '@/components/warehousebills/WarehouseBillDetailsDialog'
-import { VerifyEntryBillDialog } from '@/components/warehousebills/VerifyEntryBillDialog'
 import {
   useFranchiseWarehouseBills,
-  useVerifyEntryBill,
-  useCompleteEntryBill,
 } from '@/hooks/queries/use-warehouse-bills'
-import type { WarehouseBill, VerifyEntryBillRequest } from '@/types/api'
 import { rootRoute } from '@/main'
+import { createRoute, useNavigate, useParams } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
+import { useState } from 'react'
 
 export const FranchiseWarehouseBillsIndexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -31,43 +26,11 @@ function FranchiseWarehouseBillsPage() {
 
   const [page, setPage] = useState(1)
   const [limit] = useState(20)
-  const [selectedBill, setSelectedBill] = useState<WarehouseBill | undefined>()
-  const [detailsOpen, setDetailsOpen] = useState(false)
-  const [verifyOpen, setVerifyOpen] = useState(false)
 
   const { data: billsData, isLoading } = useFranchiseWarehouseBills(
     franchiseIdNum,
     { page, limit }
   )
-  const verifyBill = useVerifyEntryBill()
-  const completeBill = useCompleteEntryBill()
-
-  const handleViewDetails = (bill: WarehouseBill) => {
-    setSelectedBill(bill)
-    setDetailsOpen(true)
-  }
-
-  const handleVerifySubmit = async (data: VerifyEntryBillRequest) => {
-    if (selectedBill) {
-      await verifyBill.mutateAsync({
-        franchiseId: franchiseIdNum,
-        billId: selectedBill.id,
-        data,
-      })
-      setVerifyOpen(false)
-      setDetailsOpen(true)
-    }
-  }
-
-  const handleComplete = async () => {
-    if (selectedBill) {
-      await completeBill.mutateAsync({
-        franchiseId: franchiseIdNum,
-        billId: selectedBill.id,
-      })
-      setDetailsOpen(false)
-    }
-  }
 
   const bills = billsData?.data || []
 
@@ -108,7 +71,6 @@ function FranchiseWarehouseBillsPage() {
                 <WarehouseBillTable
                   bills={bills}
                   franchiseId={franchiseIdNum}
-                  onView={handleViewDetails}
                 />
                 {billsData && billsData.total_pages > 1 && (
                   <div className="flex justify-center gap-2 mt-4">
@@ -137,30 +99,6 @@ function FranchiseWarehouseBillsPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* Bill Details Dialog */}
-        {selectedBill && (
-          <>
-            <WarehouseBillDetailsDialog
-              open={detailsOpen}
-              onOpenChange={setDetailsOpen}
-              bill={selectedBill}
-              onComplete={handleComplete}
-              isLoading={completeBill.isPending}
-              isFranchise={true}
-            />
-            {selectedBill.bill_type === 'entry' &&
-              selectedBill.status === 'draft' && (
-                <VerifyEntryBillDialog
-                  open={verifyOpen}
-                  onOpenChange={setVerifyOpen}
-                  bill={selectedBill}
-                  onSubmit={handleVerifySubmit}
-                  isLoading={verifyBill.isPending}
-                />
-              )}
-          </>
-        )}
       </div>
     </RoleBasedLayout>
   )

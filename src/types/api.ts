@@ -301,6 +301,14 @@ export interface RegisterResponse {
   email: string
 }
 
+export interface PasswordResetRequest {
+  email: string
+}
+
+export interface PasswordResetResponse {
+  message: string
+}
+
 export interface ValidateInvitationResponse {
   email: string
   company_id: number

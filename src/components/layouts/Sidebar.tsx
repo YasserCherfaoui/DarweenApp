@@ -116,45 +116,57 @@ export function Sidebar() {
           </div>
         </div>
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
-          {/* Global Navigation - Only show Dashboard, hide Companies in franchise portal */}
-          {!isCollapsed && (
-            <div className="px-3 pb-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Main
-              </p>
-            </div>
-          )}
-          {globalNavigation
-            .filter((item) => {
-              // Hide "Companies" link when in franchise portal
-              if (selectedPortalType === 'franchise' && item.name === 'Companies') {
+          {/* Global Navigation - Hide for franchise portal users */}
+          {(() => {
+            const filteredGlobalNav = globalNavigation.filter((item) => {
+              // Hide global navigation (Dashboard and Companies) when in franchise portal
+              // Franchise users should only see portal-specific navigation: Products, Inventory, Warehouse Bills, POS
+              if (selectedPortalType === 'franchise') {
                 return false
               }
               return true
             })
-            .map((item) => {
-            const isActive = currentPath === item.to || 
-              (item.to !== '/' && currentPath.startsWith(item.to))
-            const Icon = item.icon
+            
+            // Only show "Main" header if there are global navigation items to display
+            if (filteredGlobalNav.length === 0) {
+              return null
+            }
             
             return (
-              <Link
-                key={item.name}
-                to={item.to}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                    : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-                  isCollapsed && 'justify-center'
+              <>
+                {!isCollapsed && (
+                  <div className="px-3 pb-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Main
+                    </p>
+                  </div>
                 )}
-                title={isCollapsed ? item.name : undefined}
-              >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                {!isCollapsed && item.name}
-              </Link>
+                {filteredGlobalNav.map((item) => {
+                  const isActive = currentPath === item.to || 
+                    (item.to !== '/' && currentPath.startsWith(item.to))
+                  const Icon = item.icon
+                  
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.to}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                        isActive
+                          ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                        isCollapsed && 'justify-center'
+                      )}
+                      title={isCollapsed ? item.name : undefined}
+                    >
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      {!isCollapsed && item.name}
+                    </Link>
+                  )
+                })}
+              </>
             )
-          })}
+          })()}
           
           {/* Portal-specific Navigation Sections */}
           {portalNavigationSections.length > 0 && (

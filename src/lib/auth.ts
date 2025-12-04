@@ -1,6 +1,6 @@
-import { apiClient } from './api-client'
-import { setAuthUser, clearAuthUser } from '@/stores/auth-store'
+import { clearAuthUser, setAuthUser } from '@/stores/auth-store'
 import type { LoginRequest, RegisterRequest } from '@/types/api'
+import { apiClient } from './api-client'
 
 export const login = async (data: LoginRequest) => {
   const response = await apiClient.auth.login(data)

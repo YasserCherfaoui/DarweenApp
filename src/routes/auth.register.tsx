@@ -7,6 +7,7 @@ import { executeRecaptcha } from '@/lib/recaptcha'
 import { rootRoute } from '@/main'
 import { useForm } from '@tanstack/react-form'
 import { Link, createRoute } from '@tanstack/react-router'
+import { Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { z } from 'zod'
 
@@ -27,6 +28,7 @@ function RegisterPage() {
   const [registrationEmail, setRegistrationEmail] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   // Load reCAPTCHA on mount, cleanup on unmount (auth page only)
   useRecaptcha()
@@ -298,17 +300,32 @@ function RegisterPage() {
               {(field) => (
                 <div className="space-y-2">
                   <Label htmlFor={field.name}>Password</Label>
-                  <Input
-                    id={field.name}
-                    name={field.name}
-                    type="password"
-                    placeholder="••••••••"
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    disabled={isSubmitting}
-                    autoComplete="new-password"
-                  />
+                  <div className="relative">
+                    <Input
+                      id={field.name}
+                      name={field.name}
+                      type={showPassword ? 'text' : 'password'}
+                      placeholder="••••••••"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      disabled={isSubmitting}
+                      autoComplete="new-password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                      disabled={isSubmitting}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                   {field.state.meta.isTouched && field.state.meta.errors.length > 0 && (
                     <p className="text-sm text-red-500">
                       {String(field.state.meta.errors[0])}

@@ -1,9 +1,9 @@
+import { login as loginApi, logout as logoutApi, register as registerApi } from '@/lib/auth'
+import { authStore } from '@/stores/auth-store'
+import type { LoginRequest, RegisterRequest } from '@/types/api'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
-import { login as loginApi, register as registerApi, logout as logoutApi } from '@/lib/auth'
-import { authStore } from '@/stores/auth-store'
-import type { LoginRequest, RegisterRequest } from '@/types/api'
 import { toast } from 'sonner'
 
 export const useAuth = () => {

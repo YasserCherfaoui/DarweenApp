@@ -5,11 +5,12 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useDebounce } from '@/hooks/use-debounce'
 import { apiClient } from '@/lib/api-client'
+import { isAuthenticated } from '@/lib/auth'
 import { rootRoute } from '@/main'
 import { setAuthUser } from '@/stores/auth-store'
 import type { User } from '@/types/api'
 import { useForm } from '@tanstack/react-form'
-import { createRoute, useNavigate } from '@tanstack/react-router'
+import { createRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { AlertCircle, Building2, CheckCircle2, FileText, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { z } from 'zod'
@@ -18,6 +19,34 @@ export const CompanySetupRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/company-setup',
   component: CompanySetupPage,
+  beforeLoad: async () => {
+    // Check if user is authenticated
+    if (!isAuthenticated()) {
+      // Not authenticated, allow access (they can create a company)
+      return
+    }
+
+    // User is authenticated, check if they have any portals (companies or franchises)
+    try {
+      const response = await apiClient.users.getPortals()
+      if (response.success && response.data && response.data.portals && response.data.portals.length > 0) {
+        // User has existing portals (companies or franchises), redirect them away
+        // They shouldn't be able to create a company if they're already part of one
+        throw redirect({
+          to: '/dashboard',
+          replace: true,
+        })
+      }
+      // User has no portals, allow them to proceed with company setup
+    } catch (error) {
+      // If it's a redirect, re-throw it
+      if (error && typeof error === 'object' && 'to' in error) {
+        throw error
+      }
+      // If API call failed, allow access (better to allow than block)
+      // User might have network issues but should still be able to try
+    }
+  },
 })
 
 const companySchema = z.object({
@@ -107,8 +136,10 @@ function CompanySetupPage() {
   }, 500)
 
   const handleCodeChange = (value: string) => {
-    form.setFieldValue('code', value)
-    checkCodeAvailability(value)
+    // Convert to uppercase and remove any lowercase characters
+    const upperValue = value.toUpperCase()
+    form.setFieldValue('code', upperValue)
+    checkCodeAvailability(upperValue)
   }
 
   const handleNext = () => {
@@ -227,6 +258,10 @@ function CompanySetupPage() {
                     onChange: ({ value }) => {
                       const result = companySchema.shape.code.safeParse(value)
                       if (!result.success) return result.error.issues[0]?.message
+                      // Check if value contains lowercase letters
+                      if (value !== value.toUpperCase()) {
+                        return 'Company code must be uppercase only'
+                      }
                       if (codeCheckStatus === 'taken') return 'This code is already taken'
                       return undefined
                     },
@@ -239,11 +274,12 @@ function CompanySetupPage() {
                         <Input
                           id={field.name}
                           name={field.name}
-                          placeholder="acme-corp"
+                          placeholder="ACME-CORP"
                           value={field.state.value}
                           onChange={(e) => handleCodeChange(e.target.value)}
                           onBlur={field.handleBlur}
                           disabled={isSubmitting}
+                          style={{ textTransform: 'uppercase' }}
                           className={
                             codeCheckStatus === 'available'
                               ? 'border-green-500'
@@ -425,17 +461,17 @@ function CompanySetupPage() {
                   )}
                 </form.Field>
 
-                <div className="flex space-x-2">
+                <div className="flex gap-2">
                   <Button
                     type="button"
                     onClick={() => setStep(1)}
                     variant="outline"
-                    className="w-full"
+                    className="flex-1"
                     disabled={isSubmitting}
                   >
                     Back
                   </Button>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  <Button type="submit" className="flex-1" disabled={isSubmitting}>
                     {isSubmitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

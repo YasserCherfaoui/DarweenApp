@@ -1,18 +1,18 @@
-import { createRoute, useParams, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
 import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
 import { Button } from '@/components/ui/button'
 import { Loading } from '@/components/ui/loading'
-import { ArrowLeft, CheckCircle } from 'lucide-react'
-import { WarehouseBillDetailsDialog } from '@/components/warehousebills/WarehouseBillDetailsDialog'
 import { VerifyEntryBillDialog } from '@/components/warehousebills/VerifyEntryBillDialog'
+import { WarehouseBillDetailsPage } from '@/components/warehousebills/WarehouseBillDetailsPage'
 import {
+  useCompleteEntryBill,
   useFranchiseWarehouseBill,
   useVerifyEntryBill,
-  useCompleteEntryBill,
 } from '@/hooks/queries/use-warehouse-bills'
-import type { VerifyEntryBillRequest } from '@/types/api'
 import { rootRoute } from '@/main'
+import type { VerifyEntryBillRequest } from '@/types/api'
+import { createRoute, useNavigate, useParams } from '@tanstack/react-router'
+import { ArrowLeft, CheckCircle } from 'lucide-react'
+import { useState } from 'react'
 
 export const FranchiseWarehouseBillDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -86,13 +86,7 @@ function FranchiseWarehouseBillDetailPage() {
 
         {bill && (
           <>
-            <WarehouseBillDetailsDialog
-              open={true}
-              onOpenChange={(open) => {
-                if (!open) {
-                  navigate({ to: `/franchises/${franchiseId}/warehouse-bills` })
-                }
-              }}
+            <WarehouseBillDetailsPage
               bill={bill}
               onComplete={handleComplete}
               isLoading={completeBill.isPending}

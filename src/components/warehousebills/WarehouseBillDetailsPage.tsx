@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,9 +10,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertTriangle, CheckCircle, XCircle, Edit } from 'lucide-react'
 import type { WarehouseBill, WarehouseBillItem } from '@/types/api'
+import { AlertTriangle, CheckCircle, Edit, XCircle } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { EditExitBillItems } from './EditExitBillItems'
 
 interface WarehouseBillDetailsPageProps {
@@ -232,18 +232,15 @@ export function WarehouseBillDetailsPage({
                   <TableCell>
                     <div>
                       <div className="font-medium">
-                        {item.variant_name ||
-                          item.product_name ||
-                          `Variant #${item.product_variant_id}`}
+                        {item.product_name && item.variant_name
+                          ? `${item.product_name} - ${item.variant_name}`
+                          : item.variant_name ||
+                            item.product_name ||
+                            `Variant #${item.product_variant_id}`}
                       </div>
-                      {item.product_name && item.variant_name && (
-                        <div className="text-sm text-gray-500">
-                          Product: {item.product_name}
-                        </div>
-                      )}
                       {item.variant_sku && (
-                        <div className="text-sm text-gray-500">
-                          SKU: {item.variant_sku}
+                        <div className="text-sm font-bold mt-1">
+                          {item.variant_sku}
                         </div>
                       )}
                       {item.discrepancy_notes && (
@@ -277,6 +274,82 @@ export function WarehouseBillDetailsPage({
               })}
             </TableBody>
           </Table>
+        </CardContent>
+      </Card>
+
+      {/* Summary Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Summary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <div className="text-sm text-gray-500 mb-1">Total Items</div>
+              <div className="font-semibold text-lg">
+                {bill.items?.length || 0}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500 mb-1">
+                Total Quantity {bill.bill_type === 'entry' ? '(Expected)' : ''}
+              </div>
+              <div className="font-semibold text-lg">
+                {bill.items?.reduce(
+                  (sum, item) => sum + (item.expected_quantity || item.quantity || 0),
+                  0
+                ) || 0}
+              </div>
+            </div>
+            {bill.bill_type === 'entry' && (
+              <div>
+                <div className="text-sm text-gray-500 mb-1">Total Quantity (Received)</div>
+                <div className="font-semibold text-lg">
+                  {bill.items?.reduce(
+                    (sum, item) => sum + (item.received_quantity || 0),
+                    0
+                  ) || 0}
+                </div>
+              </div>
+            )}
+            <div>
+              <div className="text-sm text-gray-500 mb-1">Total Amount</div>
+              <div className="font-semibold text-lg">
+                ${bill.total_amount.toFixed(2)}
+              </div>
+            </div>
+          </div>
+          {bill.bill_type === 'entry' && bill.items && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="text-sm text-gray-500 mb-2">Item Status Breakdown</div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500">OK</div>
+                  <div className="font-medium">
+                    {bill.items.filter((item) => item.discrepancy_type === 'none').length}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Missing</div>
+                  <div className="font-medium text-red-600">
+                    {bill.items.filter((item) => item.discrepancy_type === 'missing').length}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Extra</div>
+                  <div className="font-medium text-yellow-600">
+                    {bill.items.filter((item) => item.discrepancy_type === 'extra').length}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500">Mismatch</div>
+                  <div className="font-medium text-orange-600">
+                    {bill.items.filter((item) => item.discrepancy_type === 'quantity_mismatch').length}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

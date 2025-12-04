@@ -53,7 +53,7 @@ function ChangePasswordOTPPage() {
     }
   }, [search.otp, search.email])
 
-  const validateOTP = async (code: string, emailAddress: string) => {
+  const validateOTP = async (code: string, emailAddress: string): Promise<boolean> => {
     setIsValidating(true)
     setError(null)
     try {
@@ -61,13 +61,16 @@ function ChangePasswordOTPPage() {
       if (response.success && response.data?.valid) {
         setIsValid(true)
         setEmail(emailAddress)
+        return true
       } else {
         setIsValid(false)
         setError('Invalid or expired OTP code. Please check your email for the correct code.')
+        return false
       }
     } catch (err: any) {
       setIsValid(false)
       setError(err.message || 'Invalid or expired OTP code. Please check your email for the correct code.')
+      return false
     } finally {
       setIsValidating(false)
     }
@@ -88,16 +91,8 @@ function ChangePasswordOTPPage() {
       try {
         // Ensure code is a string
         const codeStr = String(value.code).padStart(6, '0')
-        
-        // Validate OTP first
-        if (!isValid) {
-          await validateOTP(codeStr, value.email)
-          if (!isValid) {
-            setIsSubmitting(false)
-            return
-          }
-        }
 
+        // The backend will validate the OTP when changing the password
         const response = await apiClient.auth.changePasswordWithOTP({
           code: codeStr,
           email: value.email,
@@ -110,6 +105,8 @@ function ChangePasswordOTPPage() {
           setTimeout(() => {
             navigate({ to: '/login' })
           }, 2000)
+        } else {
+          setError(response.error?.message || 'Failed to change password. Please try again.')
         }
       } catch (err: any) {
         setError(err.message || 'Failed to change password. Please try again.')

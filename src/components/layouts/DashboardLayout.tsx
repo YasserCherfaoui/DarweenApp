@@ -4,11 +4,12 @@ import { RoleSwitcher } from '@/components/auth/RoleSwitcher'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { Button } from '@/components/ui/button'
 import { useUserPortals } from '@/hooks/queries/use-portals'
-import { portalStore } from '@/stores/portal-store'
+import { portalStore, setSelectedPortal } from '@/stores/portal-store'
 import { toggleSidebar } from '@/stores/sidebar-store'
 import { useStore } from '@tanstack/react-store'
 import { Menu } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useEffect } from 'react'
 import { Sidebar } from './Sidebar'
 import { UserMenu } from './UserMenu'
 
@@ -18,11 +19,39 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { selectedPortal } = useStore(portalStore)
-  const { data: portalsData } = useUserPortals()
+  const { data: portalsData, isLoading: portalsLoading } = useUserPortals()
   
   const portals = portalsData?.portals || []
   const hasMultiplePortals = portals.length > 1
   const shouldShowSelectionScreen = hasMultiplePortals && !selectedPortal
+
+  // Auto-select portal when there's only one available
+  // Also re-select if the current selection doesn't match available portals (handles stale localStorage)
+  useEffect(() => {
+    if (portalsLoading || portals.length === 0) {
+      return
+    }
+
+    // If there's only one portal, always select it (handles both new selection and stale data)
+    if (portals.length === 1) {
+      const singlePortal = portals[0]
+      // Check if we need to update: no selection, wrong ID, or wrong type
+      const needsUpdate = !selectedPortal || 
+                         selectedPortal.id !== singlePortal.id || 
+                         selectedPortal.type !== singlePortal.type
+      
+      if (needsUpdate) {
+        setSelectedPortal(singlePortal)
+      }
+    } else if (portals.length > 1 && selectedPortal) {
+      // If multiple portals exist, verify the selected one is still valid
+      const isValidSelection = portals.some(p => p.id === selectedPortal.id && p.type === selectedPortal.type)
+      if (!isValidSelection) {
+        // Selected portal is no longer available, clear selection to show selection screen
+        // This is handled by shouldShowSelectionScreen logic
+      }
+    }
+  }, [portals, selectedPortal, portalsLoading])
 
   // Show portal selection screen if user has multiple portals and none selected
   if (shouldShowSelectionScreen) {
