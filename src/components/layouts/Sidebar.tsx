@@ -53,6 +53,12 @@ const getCompanyNavigationSections = (companyId: number): NavigationSection[] =>
 
 const getFranchiseNavigationSections = (franchiseId: number): NavigationSection[] => [
   {
+    title: 'Main',
+    items: [
+      { name: 'Dashboard', to: `/franchises/${franchiseId}`, icon: LayoutDashboard },
+    ]
+  },
+  {
     title: 'Inventory Management',
     items: [
       { name: 'Products', to: `/franchises/${franchiseId}/products`, icon: Package },

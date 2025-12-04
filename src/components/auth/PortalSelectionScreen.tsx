@@ -16,8 +16,12 @@ export function PortalSelectionScreen() {
 
   const handleSelectPortal = (portal: Portal) => {
     setSelectedPortal(portal)
-    // Navigate to dashboard
-    navigate({ to: '/' })
+    // Navigate to appropriate dashboard based on portal type
+    if (portal.type === 'franchise') {
+      navigate({ to: `/franchises/${portal.id}` })
+    } else {
+      navigate({ to: '/companies' })
+    }
   }
 
   const getPortalIcon = (type: string) => {

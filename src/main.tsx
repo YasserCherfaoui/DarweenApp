@@ -62,6 +62,7 @@ import { CompanyWarehouseBillsNewRoute } from './routes/companies.$companyId.war
 import { CreateCompanyRoute } from './routes/companies.create'
 import { CompaniesRoute } from './routes/companies.index'
 import { DashboardRoute } from './routes/dashboard.index'
+import { FranchiseDashboardRoute } from './routes/franchises.$franchiseId.index'
 import { FranchiseInventoryRoute } from './routes/franchises.$franchiseId.inventory.index'
 import { FranchiseCashDrawerRoute } from './routes/franchises.$franchiseId.pos.cash-drawer.index'
 import { FranchisePOSRoute } from './routes/franchises.$franchiseId.pos.index'
@@ -117,6 +118,7 @@ const routeTree = rootRoute.addChildren([
   CreateFranchiseRoute,
   CompanyFranchiseRoute,
   EditCompanyFranchiseRoute,
+  FranchiseDashboardRoute,
   FranchiseInventoryRoute,
   FranchiseInventoryHistoryRoute,
   CompanyInventoryRoute,

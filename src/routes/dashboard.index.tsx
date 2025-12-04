@@ -1,13 +1,24 @@
-import { createRoute } from '@tanstack/react-router'
+import { createRoute, redirect } from '@tanstack/react-router'
 import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Building2, Package, Store, Warehouse } from 'lucide-react'
 import { rootRoute } from '@/main'
+import { portalStore } from '@/stores/portal-store'
 
 export const DashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   component: DashboardPage,
+  beforeLoad: async () => {
+    const portalState = portalStore.state
+    // Redirect franchise portal users to their franchise dashboard
+    if (portalState.selectedPortalType === 'franchise' && portalState.selectedPortalId) {
+      throw redirect({
+        to: `/franchises/${portalState.selectedPortalId}`,
+        replace: true,
+      })
+    }
+  },
 })
 
 function DashboardPage() {

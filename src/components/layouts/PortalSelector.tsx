@@ -1,6 +1,7 @@
 import { useStore } from '@tanstack/react-store'
 import { portalStore, setSelectedPortal, clearSelectedPortal } from '@/stores/portal-store'
 import { useUserPortals } from '@/hooks/queries/use-portals'
+import { useNavigate } from '@tanstack/react-router'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,7 @@ import { Building2, Store, Check, ChevronDown, X } from 'lucide-react'
 import type { Portal } from '@/types/api'
 
 export function PortalSelector() {
+  const navigate = useNavigate()
   const { selectedPortal } = useStore(portalStore)
   const { data: portalsData, isLoading } = useUserPortals()
 
@@ -23,6 +25,12 @@ export function PortalSelector() {
 
   const handleSelectPortal = (portal: Portal) => {
     setSelectedPortal(portal)
+    // Navigate to appropriate dashboard based on portal type
+    if (portal.type === 'franchise') {
+      navigate({ to: `/franchises/${portal.id}` })
+    } else {
+      navigate({ to: '/companies' })
+    }
   }
 
   const handleClearSelection = () => {
