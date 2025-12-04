@@ -120,7 +120,18 @@ import type {
   YalidineConfigListResponse,
   YalidineConfigResponse,
   YalidineFeesResponse,
-  YalidineWilayasResponse
+  YalidineWilayasResponse,
+  CompanySummary,
+  UserSummary,
+  SubscriptionSummary,
+  PlatformAnalytics,
+  SystemSettings,
+  UpdateSystemSettingsRequest,
+  UpdateCompanyAdminRequest,
+  UpdateUserAdminRequest,
+  UpdateSubscriptionAdminRequest,
+  ListCompaniesAdminRequest,
+  ListUsersAdminRequest,
 } from '@/types/api'
 
 const API_URL = env.VITE_API_URL
@@ -2071,6 +2082,112 @@ class ApiClient {
             method: 'DELETE',
           }
         )
+      },
+    },
+  }
+
+  // Admin endpoints
+  admin = {
+      companies: {
+        list: async (
+          params?: ListCompaniesAdminRequest
+        ): Promise<ApiResponse<{ companies: CompanySummary[]; total: number; page: number; limit: number }>> => {
+          const queryParams = new URLSearchParams()
+          if (params?.page) queryParams.append('page', params.page.toString())
+          if (params?.limit) queryParams.append('limit', params.limit.toString())
+          if (params?.search) queryParams.append('search', params.search)
+          if (params?.is_active !== undefined) queryParams.append('is_active', params.is_active.toString())
+          if (params?.plan_type) queryParams.append('plan_type', params.plan_type)
+          const query = queryParams.toString()
+          return this.request(`/admin/companies${query ? `?${query}` : ''}`)
+        },
+
+        get: async (id: number): Promise<ApiResponse<CompanySummary>> => {
+          return this.request(`/admin/companies/${id}`)
+        },
+
+        update: async (
+          id: number,
+          data: UpdateCompanyAdminRequest
+        ): Promise<ApiResponse<CompanySummary>> => {
+          return this.request(`/admin/companies/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          })
+        },
+      },
+
+      users: {
+        list: async (
+          params?: ListUsersAdminRequest
+        ): Promise<ApiResponse<{ users: UserSummary[]; total: number; page: number; limit: number }>> => {
+          const queryParams = new URLSearchParams()
+          if (params?.page) queryParams.append('page', params.page.toString())
+          if (params?.limit) queryParams.append('limit', params.limit.toString())
+          if (params?.search) queryParams.append('search', params.search)
+          if (params?.is_active !== undefined) queryParams.append('is_active', params.is_active.toString())
+          if (params?.email_verified !== undefined) queryParams.append('email_verified', params.email_verified.toString())
+          const query = queryParams.toString()
+          return this.request(`/admin/users${query ? `?${query}` : ''}`)
+        },
+
+        get: async (id: number): Promise<ApiResponse<UserSummary>> => {
+          return this.request(`/admin/users/${id}`)
+        },
+
+        update: async (
+          id: number,
+          data: UpdateUserAdminRequest
+        ): Promise<ApiResponse<UserSummary>> => {
+          return this.request(`/admin/users/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          })
+        },
+      },
+
+      subscriptions: {
+        list: async (
+          params?: PaginationParams & { plan_type?: string }
+        ): Promise<ApiResponse<{ subscriptions: SubscriptionSummary[]; total: number; page: number; limit: number }>> => {
+          const queryParams = new URLSearchParams()
+          if (params?.page) queryParams.append('page', params.page.toString())
+          if (params?.limit) queryParams.append('limit', params.limit.toString())
+          if (params?.plan_type) queryParams.append('plan_type', params.plan_type)
+          const query = queryParams.toString()
+          return this.request(`/admin/subscriptions${query ? `?${query}` : ''}`)
+        },
+
+        update: async (
+          id: number,
+          data: UpdateSubscriptionAdminRequest
+        ): Promise<ApiResponse<SubscriptionSummary>> => {
+          return this.request(`/admin/subscriptions/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          })
+        },
+      },
+
+      analytics: {
+        getOverview: async (): Promise<ApiResponse<PlatformAnalytics>> => {
+          return this.request('/admin/analytics/overview')
+        },
+      },
+
+      systemSettings: {
+        get: async (): Promise<ApiResponse<SystemSettings>> => {
+          return this.request('/admin/system-settings')
+        },
+
+        update: async (
+          data: UpdateSystemSettingsRequest
+        ): Promise<ApiResponse<SystemSettings>> => {
+          return this.request('/admin/system-settings', {
+            method: 'PUT',
+            body: JSON.stringify(data),
+          })
+        },
       },
     },
   }

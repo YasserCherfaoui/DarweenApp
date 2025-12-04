@@ -77,6 +77,15 @@ import { HomeRoute } from './routes/home.index'
 import { PrivacyPolicyRoute } from './routes/privacy-policy'
 import { ProfileRoute } from './routes/profile.index'
 import { SettingsRoute } from './routes/settings.index'
+import { AdminDashboardRoute } from './routes/admin.index'
+import { AdminCompaniesRoute } from './routes/admin.companies.index'
+import { AdminCompanyDetailRoute } from './routes/admin.companies.$companyId'
+import { AdminUsersRoute } from './routes/admin.users.index'
+import { AdminUserDetailRoute } from './routes/admin.users.$userId'
+import { AdminSubscriptionsRoute } from './routes/admin.subscriptions.index'
+import { AdminAnalyticsRoute } from './routes/admin.analytics.index'
+import { AdminSettingsRoute } from './routes/admin.settings.index'
+import { AdminAuditLogsRoute } from './routes/admin.audit-logs.index'
 
 import reportWebVitals from './reportWebVitals.ts'
 import './styles.css'
@@ -159,6 +168,15 @@ const routeTree = rootRoute.addChildren([
   FranchiseWarehouseBillsIndexRoute,
   FranchiseWarehouseBillsNewRoute,
   FranchiseWarehouseBillDetailRoute,
+  AdminDashboardRoute,
+  AdminCompaniesRoute,
+  AdminCompanyDetailRoute,
+  AdminUsersRoute,
+  AdminUserDetailRoute,
+  AdminSubscriptionsRoute,
+  AdminAnalyticsRoute,
+  AdminSettingsRoute,
+  AdminAuditLogsRoute,
 ])
 
 const TanStackQueryProviderContext = TanStackQueryProvider.getContext()

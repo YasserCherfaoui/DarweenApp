@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/tooltip'
 import { useUserRole } from '@/hooks/use-user-role'
 import { cn } from '@/lib/utils'
-import { Crown, Shield, User, UserCog } from 'lucide-react'
+import { Crown, Shield, User, UserCog, ShieldCheck } from 'lucide-react'
 
 interface RoleBadgeProps {
   className?: string
@@ -16,6 +16,18 @@ interface RoleBadgeProps {
 }
 
 const roleConfig = {
+  super_admin: {
+    label: 'Super Admin',
+    icon: ShieldCheck,
+    color: 'bg-red-600 hover:bg-red-700 text-white border-red-500',
+    description: 'Platform-wide administrative access',
+    capabilities: [
+      'Manage all companies and users',
+      'Access platform analytics',
+      'Manage system settings',
+      'Full platform control',
+    ],
+  },
   owner: {
     label: 'Owner',
     icon: Crown,
@@ -73,7 +85,10 @@ export function RoleBadge({ className, showIcon = true, variant = 'default' }: R
     return null
   }
 
-  const config = roleConfig[role]
+  const config = roleConfig[role as keyof typeof roleConfig]
+  if (!config) {
+    return null
+  }
   const Icon = config.icon
 
   const badgeContent = (
@@ -106,7 +121,7 @@ export function RoleBadge({ className, showIcon = true, variant = 'default' }: R
             <div className="border-t pt-2">
               <p className="text-xs font-medium mb-1.5">Key Capabilities:</p>
               <ul className="text-xs space-y-1 text-muted-foreground">
-                {config.capabilities.map((capability, index) => (
+                {config.capabilities.map((capability: string, index: number) => (
                   <li key={index} className="flex items-start gap-1.5">
                     <span className="text-primary mt-0.5">•</span>
                     <span>{capability}</span>

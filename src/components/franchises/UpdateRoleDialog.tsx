@@ -46,14 +46,14 @@ export function UpdateRoleDialog({
   const form = useForm<FormValues>({
     resolver: zodResolver(updateRoleSchema),
     defaultValues: {
-      role: user?.role || 'employee',
+      role: (user?.role && user.role !== 'super_admin' ? user.role : 'employee') as FormValues['role'],
     },
     mode: 'onChange',
   })
 
   // Update form when user changes
-  if (user && form.getValues('role') !== user.role) {
-    form.reset({ role: user.role as UserRole })
+  if (user && form.getValues('role') !== user.role && user.role !== 'super_admin') {
+    form.reset({ role: user.role as FormValues['role'] })
   }
 
   const getFieldState = (fieldName: keyof FormValues) => {
@@ -84,8 +84,8 @@ export function UpdateRoleDialog({
 
   const handleCancel = () => {
     onOpenChange(false)
-    if (user) {
-      form.reset({ role: user.role as UserRole })
+    if (user && user.role !== 'super_admin') {
+      form.reset({ role: user.role as FormValues['role'] })
     }
   }
 
@@ -117,7 +117,7 @@ export function UpdateRoleDialog({
                   <Select 
                     onValueChange={field.onChange} 
                     value={field.value}
-                    disabled={isLoading || user.role === 'owner'}
+                    disabled={isLoading || user.role === 'owner' || user.role === 'super_admin'}
                   >
                     <FormControl>
                       <SelectTrigger
@@ -168,7 +168,7 @@ export function UpdateRoleDialog({
               </Button>
               <Button 
                 type="submit" 
-                disabled={isLoading || !form.formState.isValid || user.role === 'owner'} 
+                disabled={isLoading || !form.formState.isValid || user.role === 'owner' || user.role === 'super_admin'} 
                 className="flex-1"
               >
                 {isLoading ? 'Updating...' : 'Update Role'}

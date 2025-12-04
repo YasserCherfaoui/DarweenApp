@@ -24,7 +24,7 @@ export interface PaginatedResponse<T> {
 }
 
 // User types
-export type UserRole = 'owner' | 'admin' | 'manager' | 'employee'
+export type UserRole = 'super_admin' | 'owner' | 'admin' | 'manager' | 'employee'
 
 // Permission types
 export type Permission =
@@ -139,6 +139,50 @@ export const PERMISSIONS = {
 
 // Role-Permission mapping
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
+  super_admin: [
+    // Super admin has all permissions
+    PERMISSIONS.COMPANY_CREATE,
+    PERMISSIONS.COMPANY_UPDATE,
+    PERMISSIONS.COMPANY_DELETE,
+    PERMISSIONS.COMPANY_VIEW,
+    PERMISSIONS.COMPANY_MANAGE_USERS,
+    PERMISSIONS.PRODUCT_CREATE,
+    PERMISSIONS.PRODUCT_UPDATE,
+    PERMISSIONS.PRODUCT_DELETE,
+    PERMISSIONS.PRODUCT_VIEW,
+    PERMISSIONS.INVENTORY_READ,
+    PERMISSIONS.INVENTORY_WRITE,
+    PERMISSIONS.INVENTORY_ADJUST,
+    PERMISSIONS.POS_SALES_CREATE,
+    PERMISSIONS.POS_SALES_VIEW,
+    PERMISSIONS.POS_REFUND,
+    PERMISSIONS.POS_CASH_DRAWER,
+    PERMISSIONS.POS_CUSTOMERS,
+    PERMISSIONS.POS_REPORTS,
+    PERMISSIONS.SUPPLIER_CREATE,
+    PERMISSIONS.SUPPLIER_UPDATE,
+    PERMISSIONS.SUPPLIER_DELETE,
+    PERMISSIONS.SUPPLIER_VIEW,
+    PERMISSIONS.FRANCHISE_CREATE,
+    PERMISSIONS.FRANCHISE_UPDATE,
+    PERMISSIONS.FRANCHISE_DELETE,
+    PERMISSIONS.FRANCHISE_VIEW,
+    PERMISSIONS.FRANCHISE_MANAGE_USERS,
+    PERMISSIONS.WAREHOUSE_BILL_CREATE,
+    PERMISSIONS.WAREHOUSE_BILL_UPDATE,
+    PERMISSIONS.WAREHOUSE_BILL_DELETE,
+    PERMISSIONS.WAREHOUSE_BILL_VIEW,
+    PERMISSIONS.WAREHOUSE_BILL_COMPLETE,
+    PERMISSIONS.SETTINGS_VIEW,
+    PERMISSIONS.SETTINGS_UPDATE,
+    PERMISSIONS.SETTINGS_SUBSCRIPTION,
+    PERMISSIONS.SETTINGS_SMTP,
+    PERMISSIONS.EMAIL_SEND,
+    PERMISSIONS.SUBSCRIPTION_VIEW,
+    PERMISSIONS.SUBSCRIPTION_UPDATE,
+    PERMISSIONS.USERS_VIEW,
+    PERMISSIONS.USERS_UPDATE,
+  ],
   owner: [
     PERMISSIONS.COMPANY_CREATE,
     PERMISSIONS.COMPANY_UPDATE,
@@ -1572,6 +1616,109 @@ export interface OrderFilters {
   date_to?: string
   page?: number
   limit?: number
+}
+
+// Admin types
+export interface CompanySummary {
+  id: number
+  name: string
+  code: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  user_count: number
+  product_count: number
+  franchise_count: number
+  subscription_plan: string
+  subscription_status: string
+}
+
+export interface UserSummary {
+  id: number
+  email: string
+  first_name: string
+  last_name: string
+  email_verified: boolean
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  company_count: number
+  last_login_at?: string
+}
+
+export interface SubscriptionSummary {
+  id: number
+  company_id: number
+  company_name: string
+  plan_type: string
+  status: string
+  start_date: string
+  end_date?: string
+  max_users: number
+  created_at: string
+  updated_at: string
+}
+
+export interface PlatformAnalytics {
+  total_companies: number
+  active_companies: number
+  total_users: number
+  active_users: number
+  total_products: number
+  total_franchises: number
+  total_subscriptions: number
+  active_subscriptions: number
+  companies_by_plan: Record<string, number>
+  users_by_role: Record<string, number>
+}
+
+export interface SystemSettings {
+  maintenance_mode: boolean
+  max_users_per_company: number
+  features_enabled: Record<string, boolean>
+}
+
+export interface UpdateSystemSettingsRequest {
+  maintenance_mode?: boolean
+  max_users_per_company?: number
+  features_enabled?: Record<string, boolean>
+}
+
+export interface AuditLog {
+  id: number
+  user_id: number
+  action: string
+  resource_type: string
+  resource_id: number
+  details: string
+  ip_address: string
+  user_agent: string
+  created_at: string
+}
+
+export interface ListCompaniesAdminRequest extends PaginationParams {
+  search?: string
+  is_active?: boolean
+  plan_type?: string
+}
+
+export interface ListUsersAdminRequest extends PaginationParams {
+  search?: string
+  is_active?: boolean
+  email_verified?: boolean
+}
+
+export interface UpdateCompanyAdminRequest {
+  is_active?: boolean
+}
+
+export interface UpdateUserAdminRequest {
+  is_active?: boolean
+}
+
+export interface UpdateSubscriptionAdminRequest {
+  plan_type?: string
+  status?: string
 }
 
 
