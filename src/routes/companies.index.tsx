@@ -1,13 +1,13 @@
-import { createRoute, Link, redirect } from '@tanstack/react-router'
+import { CompanyCard } from '@/components/companies/CompanyCard'
 import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { CompanyCard } from '@/components/companies/CompanyCard'
 import { useCompanies } from '@/hooks/queries/use-companies'
-import { portalStore } from '@/stores/portal-store'
-import { Plus, Building2 } from 'lucide-react'
 import { rootRoute } from '@/main'
+import { portalStore } from '@/stores/portal-store'
+import { createRoute, Link, redirect } from '@tanstack/react-router'
+import { Building2, Plus } from 'lucide-react'
 
 export const CompaniesRoute = createRoute({
   getParentRoute: () => rootRoute,

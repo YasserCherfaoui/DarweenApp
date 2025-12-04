@@ -17,6 +17,7 @@ import { AcceptInvitationRoute } from './routes/auth.accept-invitation'
 import { ChangePasswordOTPRoute } from './routes/auth.change-password-otp'
 import { CompanySetupRoute } from './routes/auth.company-setup'
 import { ForgotPasswordRoute } from './routes/auth.forgot-password'
+import { GoogleOAuthCallbackRoute } from './routes/auth.google-callback'
 import { LoginRoute } from './routes/auth.login'
 import { RegisterRoute } from './routes/auth.register'
 import { SetupAccountRoute } from './routes/auth.setup-account'
@@ -72,6 +73,7 @@ import { FranchiseWarehouseBillDetailRoute } from './routes/franchises.$franchis
 import { FranchiseWarehouseBillsIndexRoute } from './routes/franchises.$franchiseId.warehouse-bills.index'
 import { FranchiseWarehouseBillsNewRoute } from './routes/franchises.$franchiseId.warehouse-bills.new'
 import { HomeRoute } from './routes/home.index'
+import { PrivacyPolicyRoute } from './routes/privacy-policy'
 import { ProfileRoute } from './routes/profile.index'
 import { SettingsRoute } from './routes/settings.index'
 
@@ -93,9 +95,11 @@ export const rootRoute = createRootRoute({
 
 const routeTree = rootRoute.addChildren([
   HomeRoute,
+  PrivacyPolicyRoute,
   LoginRoute,
   RegisterRoute,
   ForgotPasswordRoute,
+  GoogleOAuthCallbackRoute,
   VerifyEmailRoute,
   VerificationSuccessRoute,
   CompanySetupRoute,

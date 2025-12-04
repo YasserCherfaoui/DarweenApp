@@ -273,6 +273,12 @@ class ApiClient {
         body: JSON.stringify(data),
       })
     },
+
+    initiateGoogleOAuth: async (): Promise<ApiResponse<{ url: string }>> => {
+      return this.request('/auth/google', {
+        method: 'GET',
+      })
+    },
   }
 
   // User endpoints

@@ -1,18 +1,18 @@
-import { Link, useRouterState } from '@tanstack/react-router'
-import { useStore } from '@tanstack/react-store'
+import { cn } from '@/lib/utils'
 import { portalStore } from '@/stores/portal-store'
 import { sidebarStore } from '@/stores/sidebar-store'
-import { cn } from '@/lib/utils'
-import { 
-  Building2, 
-  Package, 
-  Warehouse, 
-  Store, 
-  LayoutDashboard,
-  Truck,
-  ShoppingCart,
+import { Link, useRouterState } from '@tanstack/react-router'
+import { useStore } from '@tanstack/react-store'
+import {
+  Building2,
   FileText,
-  ShoppingBag
+  LayoutDashboard,
+  Package,
+  ShoppingBag,
+  ShoppingCart,
+  Store,
+  Truck,
+  Warehouse
 } from 'lucide-react'
 
 const globalNavigation = [

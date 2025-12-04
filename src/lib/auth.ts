@@ -49,5 +49,10 @@ export const isAuthenticated = (): boolean => {
   return !!token
 }
 
+export const loginWithGoogle = async () => {
+  const { initiateGoogleOAuth } = await import('./google-oauth')
+  await initiateGoogleOAuth()
+}
+
 
 

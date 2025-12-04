@@ -7,8 +7,8 @@ import {
   useFranchiseWarehouseBills,
 } from '@/hooks/queries/use-warehouse-bills'
 import { rootRoute } from '@/main'
-import { createRoute, useNavigate, useParams } from '@tanstack/react-router'
-import { ArrowLeft } from 'lucide-react'
+import { Link, createRoute, useNavigate, useParams } from '@tanstack/react-router'
+import { ArrowLeft, Plus } from 'lucide-react'
 import { useState } from 'react'
 
 export const FranchiseWarehouseBillsIndexRoute = createRoute({
@@ -56,6 +56,12 @@ function FranchiseWarehouseBillsPage() {
               </p>
             </div>
           </div>
+          <Link to="/franchises/$franchiseId/warehouse-bills/new" params={{ franchiseId }}>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Entry Bill
+            </Button>
+          </Link>
         </div>
 
         {/* Bills Table */}

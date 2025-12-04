@@ -1028,6 +1028,11 @@ function HomePage() {
           </div>
           <div className="mt-8 border-t pt-8 text-center text-sm text-gray-600 dark:text-gray-400">
             <p>&copy; {new Date().getFullYear()} Darween ERP. All rights reserved.</p>
+            <div className="mt-4 flex justify-center gap-6">
+              <Link to="/privacy-policy" className="hover:underline">
+                Privacy Policy
+              </Link>
+            </div>
           </div>
         </div>
       </footer>
