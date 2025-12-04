@@ -33,7 +33,7 @@ export const CompanySetupRoute = createRoute({
         // User has existing portals (companies or franchises), redirect them away
         // They shouldn't be able to create a company if they're already part of one
         throw redirect({
-          to: '/dashboard',
+          to: '/',
           replace: true,
         })
       }

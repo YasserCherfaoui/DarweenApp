@@ -14,7 +14,7 @@ export const DashboardRoute = createRoute({
     // Redirect franchise portal users to their franchise dashboard
     if (portalState.selectedPortalType === 'franchise' && portalState.selectedPortalId) {
       throw redirect({
-        to: `/franchises/${portalState.selectedPortalId}`,
+        to: `/franchises/${portalState.selectedPortalId}` as any,
         replace: true,
       })
     }

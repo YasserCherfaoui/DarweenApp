@@ -124,7 +124,7 @@ export function Sidebar() {
         <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
           {/* Global Navigation - Hide for franchise portal users */}
           {(() => {
-            const filteredGlobalNav = globalNavigation.filter((item) => {
+            const filteredGlobalNav = globalNavigation.filter(() => {
               // Hide global navigation (Dashboard and Companies) when in franchise portal
               // Franchise users should only see portal-specific navigation: Products, Inventory, Warehouse Bills, POS
               if (selectedPortalType === 'franchise') {

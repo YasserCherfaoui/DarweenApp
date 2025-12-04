@@ -27,7 +27,7 @@ export function PortalSelector() {
     setSelectedPortal(portal)
     // Navigate to appropriate dashboard based on portal type
     if (portal.type === 'franchise') {
-      navigate({ to: `/franchises/${portal.id}` })
+      navigate({ to: `/franchises/${portal.id}` as any })
     } else {
       navigate({ to: '/companies' })
     }

@@ -8,7 +8,7 @@ import { useForm } from '@tanstack/react-form'
 import { Link, createRoute, useNavigate } from '@tanstack/react-router'
 import { z } from 'zod'
 import { apiClient } from '@/lib/api-client'
-import { Mail, CheckCircle2 } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),

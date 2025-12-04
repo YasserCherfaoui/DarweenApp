@@ -1,6 +1,5 @@
 import { apiClient } from './api-client'
 import { setAuthUser } from '@/stores/auth-store'
-import type { AuthResponse } from '@/types/api'
 
 /**
  * Initiates Google OAuth flow by redirecting to backend OAuth endpoint

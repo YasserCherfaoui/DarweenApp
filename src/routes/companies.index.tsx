@@ -17,7 +17,7 @@ export const CompaniesRoute = createRoute({
     const portalState = portalStore.state
     if (portalState.selectedPortalType === 'franchise' && portalState.selectedPortalId) {
       throw redirect({
-        to: `/franchises/${portalState.selectedPortalId}`,
+        to: `/franchises/${portalState.selectedPortalId}` as any,
         replace: true,
       })
     }

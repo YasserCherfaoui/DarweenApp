@@ -37,7 +37,6 @@ function ChangePasswordOTPPage() {
   const navigate = useNavigate()
   const search = ChangePasswordOTPRoute.useSearch()
   const [isValidating, setIsValidating] = useState(false)
-  const [isValid, setIsValid] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -59,16 +58,13 @@ function ChangePasswordOTPPage() {
     try {
       const response = await apiClient.auth.validateOTP(code, emailAddress)
       if (response.success && response.data?.valid) {
-        setIsValid(true)
         setEmail(emailAddress)
         return true
       } else {
-        setIsValid(false)
         setError('Invalid or expired OTP code. Please check your email for the correct code.')
         return false
       }
     } catch (err: any) {
-      setIsValid(false)
       setError(err.message || 'Invalid or expired OTP code. Please check your email for the correct code.')
       return false
     } finally {

@@ -99,7 +99,7 @@ function VerificationSuccessPage() {
             )}
 
             <Button
-              onClick={() => navigate({ to: hasPortals ? '/dashboard' : '/company-setup' })}
+              onClick={() => navigate({ to: hasPortals ? '/' : '/company-setup' })}
               className="w-full"
               size="lg"
             >
