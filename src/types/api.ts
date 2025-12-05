@@ -338,6 +338,7 @@ export interface AuthResponse {
   token: string
   user: User
   role?: UserRole // User's role in the default/first company
+  redirect_path?: string // Path to redirect user after login
 }
 
 export interface RegisterResponse {

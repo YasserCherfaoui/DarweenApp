@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
-import { createRoute, useNavigate } from '@tanstack/react-router'
-import { rootRoute } from '@/main'
-import { completeGoogleOAuthLogin } from '@/lib/google-oauth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { apiClient } from '@/lib/api-client'
+import { completeGoogleOAuthLogin } from '@/lib/google-oauth'
+import { rootRoute } from '@/main'
+import { createRoute, useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 
 export const GoogleOAuthCallbackRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -37,8 +38,32 @@ function GoogleOAuthCallbackPage() {
         // Complete OAuth login
         await completeGoogleOAuthLogin(token)
 
-        // Redirect to companies page
-        navigate({ to: '/companies' })
+        // Determine redirect path based on user portals
+        // If user has only franchise portals, redirect to franchise
+        // Otherwise, redirect to companies
+        try {
+          const portalsResponse = await apiClient.users.getPortals()
+          if (portalsResponse.success && portalsResponse.data) {
+            const portals = portalsResponse.data.portals
+            const hasCompanyPortals = portals.some(p => p.type === 'company')
+            const franchisePortals = portals.filter(p => p.type === 'franchise')
+            
+            if (!hasCompanyPortals && franchisePortals.length > 0) {
+              // User has only franchise portals, redirect to first franchise
+              navigate({ to: `/franchises/${franchisePortals[0].id}` })
+            } else {
+              // User has company portals, redirect to companies
+              navigate({ to: '/companies' })
+            }
+          } else {
+            // Fallback to companies if portals check fails
+            navigate({ to: '/companies' })
+          }
+        } catch (portalsError) {
+          // Fallback to companies if portals check fails
+          console.error('Failed to fetch portals:', portalsError)
+          navigate({ to: '/companies' })
+        }
       } catch (err: any) {
         console.error('OAuth callback error:', err)
         setError(err.message || 'Failed to complete Google sign in')

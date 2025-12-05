@@ -1,16 +1,16 @@
-import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useRecaptcha } from '@/hooks/use-recaptcha'
+import { loginWithGoogle } from '@/lib/auth'
+import { executeRecaptcha } from '@/lib/recaptcha'
 import { rootRoute } from '@/main'
 import { useForm } from '@tanstack/react-form'
 import { Link, createRoute, useNavigate } from '@tanstack/react-router'
+import { Eye, EyeOff, Loader2, Mail } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
-import { executeRecaptcha } from '@/lib/recaptcha'
-import { Mail, Eye, EyeOff, Loader2 } from 'lucide-react'
-import { loginWithGoogle } from '@/lib/auth'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -60,13 +60,14 @@ function LoginPage() {
         
         // Call login API directly
         const { login } = await import('@/lib/auth')
-        await login({
+        const loginResponse = await login({
           ...value,
           recaptcha_token: recaptchaToken || undefined,
         })
         
-        // Navigate to companies page on success
-        navigate({ to: '/companies' })
+        // Navigate to the redirect path from the response, or default to companies
+        const redirectPath = loginResponse.redirect_path || '/companies'
+        navigate({ to: redirectPath })
       } catch (error: any) {
         console.error('Login error:', error)
         const errorMsg = error.message || 'Login failed. Please try again.'
