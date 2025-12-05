@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { CheckCircle2, XCircle } from 'lucide-react'
-import type { UserWithRole, UserRole } from '@/types/api'
+import type { UserWithRole } from '@/types/api'
 
 const cn = (...classes: (string | boolean | undefined)[]) => {
   return classes.filter(Boolean).join(' ')
