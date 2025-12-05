@@ -2191,7 +2191,6 @@ class ApiClient {
       },
     };
   }
-}
 
 // Helper function to extract permission from error message
 function extractPermissionFromMessage(message?: string): string | null {
