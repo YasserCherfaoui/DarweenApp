@@ -1,18 +1,19 @@
-import { createRoute, useNavigate } from '@tanstack/react-router'
-import { useState, useMemo } from 'react'
-import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
+import { InventoryMovementsDialog } from '@/components/inventory/InventoryMovementsDialog'
 import { InventoryTable } from '@/components/inventory/InventoryTable'
+import { ReorderPointDialog } from '@/components/inventory/ReorderPointDialog'
 import { StockAdjustmentDialog } from '@/components/inventory/StockAdjustmentDialog'
 import { StockReservationDialog } from '@/components/inventory/StockReservationDialog'
-import { InventoryMovementsDialog } from '@/components/inventory/InventoryMovementsDialog'
+import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useFranchiseInventory } from '@/hooks/queries/use-inventory'
-import { ArrowLeft, Search, Package, AlertTriangle, Lock } from 'lucide-react'
 import { rootRoute } from '@/main'
 import type { Inventory } from '@/types/api'
+import { createRoute, useNavigate } from '@tanstack/react-router'
+import { AlertTriangle, ArrowLeft, Lock, Package, Search } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 export const FranchiseInventoryRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -32,6 +33,7 @@ function FranchiseInventoryPage() {
   const [adjustDialogOpen, setAdjustDialogOpen] = useState(false)
   const [reserveDialogOpen, setReserveDialogOpen] = useState(false)
   const [movementsDialogOpen, setMovementsDialogOpen] = useState(false)
+  const [reorderDialogOpen, setReorderDialogOpen] = useState(false)
 
   const inventoryItems = inventory || []
   const franchiseName = inventoryItems[0]?.franchise_name || 'Franchise'
@@ -54,9 +56,7 @@ function FranchiseInventoryPage() {
     const totalItems = inventoryItems.length
     const totalStock = inventoryItems.reduce((sum, item) => sum + item.stock, 0)
     const totalReserved = inventoryItems.reduce((sum, item) => sum + item.reserved_stock, 0)
-    const lowStockItems = inventoryItems.filter(
-      (item) => item.available_stock > 0 && item.available_stock <= 10
-    ).length
+    const lowStockItems = inventoryItems.filter((item) => item.is_low_stock).length
     const outOfStockItems = inventoryItems.filter(
       (item) => item.available_stock <= 0 && item.is_active
     ).length
@@ -83,6 +83,11 @@ function FranchiseInventoryPage() {
   const handleViewMovements = (item: Inventory) => {
     setSelectedInventory(item)
     setMovementsDialogOpen(true)
+  }
+
+  const handleEditReorderPoint = (item: Inventory) => {
+    setSelectedInventory(item)
+    setReorderDialogOpen(true)
   }
 
   return (
@@ -198,6 +203,7 @@ function FranchiseInventoryPage() {
                 onAdjustStock={handleAdjustStock}
                 onReserveStock={handleReserveStock}
                 onViewMovements={handleViewMovements}
+                onEditReorderPoint={handleEditReorderPoint}
               />
             )}
           </CardContent>
@@ -219,6 +225,11 @@ function FranchiseInventoryPage() {
         inventory={selectedInventory}
         open={movementsDialogOpen}
         onOpenChange={setMovementsDialogOpen}
+      />
+      <ReorderPointDialog
+        inventory={selectedInventory}
+        open={reorderDialogOpen}
+        onOpenChange={setReorderDialogOpen}
       />
     </RoleBasedLayout>
   )

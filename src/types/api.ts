@@ -906,6 +906,8 @@ export interface Inventory {
   stock: number
   reserved_stock: number
   available_stock: number
+  reorder_point?: number | null
+  is_low_stock: boolean
   is_active: boolean
   created_at: string
   updated_at: string
@@ -921,6 +923,7 @@ export interface CreateInventoryRequest {
   company_id?: number
   franchise_id?: number
   stock: number
+  reorder_point?: number | null
 }
 
 export interface UpdateInventoryStockRequest {
@@ -942,6 +945,10 @@ export interface ReserveStockRequest {
 export interface ReleaseStockRequest {
   quantity: number
   notes?: string
+}
+
+export interface UpdateReorderPointRequest {
+  reorder_point: number | null
 }
 
 export interface InventoryMovement {
@@ -1550,6 +1557,7 @@ export interface ConfirmOrderRequest {
 
 export interface ConfirmOrderItemRequest {
   id: number
+  product_variant_id?: number
   confirmed_quantity?: number
   confirmed_price?: number
 }

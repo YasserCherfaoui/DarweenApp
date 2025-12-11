@@ -1,13 +1,14 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import type {
-  CreateInventoryRequest,
-  UpdateInventoryStockRequest,
-  AdjustInventoryStockRequest,
-  ReserveStockRequest,
-  ReleaseStockRequest,
-  MovementFilterParams,
+    AdjustInventoryStockRequest,
+    CreateInventoryRequest,
+    MovementFilterParams,
+    ReleaseStockRequest,
+    ReserveStockRequest,
+    UpdateInventoryStockRequest,
+    UpdateReorderPointRequest,
 } from '@/types/api'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 // Company inventory
@@ -69,6 +70,23 @@ export const useUpdateInventoryStock = (inventoryId: number) => {
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to update stock')
+    },
+  })
+}
+
+// Update reorder point
+export const useUpdateReorderPoint = (inventoryId: number) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: UpdateReorderPointRequest) =>
+      apiClient.inventory.updateReorderPoint(inventoryId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      toast.success('Reorder point updated successfully')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update reorder point')
     },
   })
 }

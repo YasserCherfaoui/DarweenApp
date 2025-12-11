@@ -1,24 +1,24 @@
-import { useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select'
 import { useCreateInventory } from '@/hooks/queries/use-inventory'
 import { useProducts } from '@/hooks/queries/use-products'
+import { useState } from 'react'
 
 interface CreateInventoryDialogProps {
   companyId: number
@@ -36,6 +36,7 @@ export function CreateInventoryDialog({
   const [selectedProductId, setSelectedProductId] = useState<string>('')
   const [selectedVariantId, setSelectedVariantId] = useState<string>('')
   const [stock, setStock] = useState<string>('')
+  const [reorderPoint, setReorderPoint] = useState<string>('')
 
   const { data: productsData } = useProducts(companyId, { page: 1, limit: 100 })
   const createInventory = useCreateInventory()
@@ -61,6 +62,9 @@ export function CreateInventoryDialog({
 
     const stockValue = parseInt(stock, 10)
     if (isNaN(stockValue) || stockValue < 0) return
+    const reorderValue =
+      reorderPoint.trim() === '' ? null : Number.isNaN(Number(reorderPoint)) ? null : Number(reorderPoint)
+    if (reorderValue !== null && reorderValue < 0) return
 
     try {
       await createInventory.mutateAsync({
@@ -68,6 +72,7 @@ export function CreateInventoryDialog({
         company_id: franchiseId ? undefined : companyId,
         franchise_id: franchiseId,
         stock: stockValue,
+        reorder_point: reorderValue,
       })
       handleClose()
     } catch (error) {
@@ -79,6 +84,7 @@ export function CreateInventoryDialog({
     setSelectedProductId('')
     setSelectedVariantId('')
     setStock('')
+    setReorderPoint('')
     onOpenChange(false)
   }
 
@@ -160,6 +166,21 @@ export function CreateInventoryDialog({
                 onChange={(e) => setStock(e.target.value)}
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="reorder_point">Reorder Point (optional)</Label>
+              <Input
+                id="reorder_point"
+                type="number"
+                min="0"
+                placeholder="Alert when available stock is at or below this number"
+                value={reorderPoint}
+                onChange={(e) => setReorderPoint(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Leave blank to use the default threshold.
+              </p>
             </div>
 
             <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">

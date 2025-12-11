@@ -319,6 +319,7 @@ export function ConfirmOrderDialog({
         
         return {
           id: item.id,
+          product_variant_id: item.product_variant_id ?? undefined,
           confirmed_quantity: item.confirmed_quantity ?? item.quantity,
           confirmed_price: price,
         }
@@ -413,23 +414,125 @@ export function ConfirmOrderDialog({
       return
     }
 
-    // Filter out items with negative IDs (new items that can't be confirmed)
-    const validItems = items.filter((item) => item.id > 0)
-    const excludedItems = items.filter((item) => item.id < 0)
+    // Debug logging: Log all items and their properties
+    console.log('=== CONFIRM ORDER VALIDATION DEBUG ===')
+    console.log('All items in state:', items)
+    console.log('Order items from API:', order.items)
+    console.log('Selected variants:', Array.from(selectedVariants.entries()))
+
+    // Analyze each item
+    const itemAnalysis = items.map((item) => {
+      const orderItem = order.items.find((i) => i.id === item.id)
+      const isNew = item.id < 0
+      const isSnapshot = orderItem?.is_snapshot === true
+      const exists = !!orderItem
+      const isEditable = exists && !isSnapshot
+      
+      return {
+        item,
+        orderItem,
+        isNew,
+        isSnapshot,
+        exists,
+        isEditable,
+        reason: isNew 
+          ? 'NEW_ITEM' 
+          : !exists 
+            ? 'NOT_FOUND' 
+            : isSnapshot 
+              ? 'SNAPSHOT' 
+              : 'VALID'
+      }
+    })
+    
+    console.log('Item analysis:', itemAnalysis)
+
+    // Filter items to include all existing items (both snapshot and non-snapshot)
+    // The backend can update snapshot items - they just need to be sent with confirmed values
+    // Exclude only new items (negative IDs) as they don't exist in the database yet
+    const validItems = items.filter((item) => {
+      // Exclude new items (negative IDs) - they can't be confirmed because they don't exist in DB
+      if (item.id < 0) {
+        console.log(`Item ${item.id} excluded: NEW_ITEM (negative ID - doesn't exist in database)`)
+        return false
+      }
+      
+      // Find the corresponding order item
+      const orderItem = order.items.find((i) => i.id === item.id)
+      
+      if (!orderItem) {
+        console.log(`Item ${item.id} excluded: NOT_FOUND in order.items`)
+        return false
+      }
+      
+      // Include both snapshot and non-snapshot items - backend can update both
+      // Snapshot items can be "confirmed" by sending confirmed_quantity and confirmed_price
+      const isSnapshot = orderItem.is_snapshot
+      console.log(`Item ${item.id} included: VALID (${isSnapshot ? 'SNAPSHOT' : 'NON-SNAPSHOT'} - can be confirmed)`)
+      return true
+    })
+    
+    const excludedItems = items.filter((item) => {
+      // Only new items (negative IDs) are excluded - they don't exist in database
+      if (item.id < 0) return true
+      // All existing items (including snapshots) can be confirmed
+      return false
+    })
+    
+    console.log('Valid items count:', validItems.length)
+    console.log('Valid items:', validItems)
+    console.log('Excluded items count:', excludedItems.length)
+    console.log('Excluded items:', excludedItems)
 
     if (excludedItems.length > 0) {
-      toast.warning(
-        `${excludedItems.length} new item(s) will be excluded from confirmation. Only existing order items can be confirmed.`
-      )
+      const newItemsCount = excludedItems.filter((item) => item.id < 0).length
+      
+      if (newItemsCount > 0) {
+        toast.warning(
+          `${newItemsCount} new item(s) will be excluded from confirmation. New items cannot be confirmed - only existing order items can be confirmed.`
+        )
+      }
     }
 
     if (validItems.length === 0) {
-      toast.error('At least one valid order item is required to confirm the order')
+      // Check what types of items we have
+      const newItemsCount = items.filter((item) => item.id < 0).length
+      const existingItemsCount = items.filter((item) => item.id > 0).length
+      
+      if (existingItemsCount === 0 && newItemsCount > 0) {
+        toast.error('Cannot confirm order: New items cannot be confirmed. Only existing order items can be confirmed. Please ensure the order has at least one existing item.')
+      } else if (existingItemsCount === 0) {
+        toast.error('Cannot confirm order: No existing order items found. The order must have at least one item to be confirmed.')
+      } else {
+        toast.error('At least one valid order item is required to confirm the order.')
+      }
       return
     }
 
     setIsSubmitting(true)
     try {
+      // Build items with product_variant_id from selected variants
+      const itemsWithVariants: ConfirmOrderItemRequest[] = validItems.map((item) => {
+        // Get variant ID from selected variants map, or from the item itself if it exists
+        const variantId = selectedVariants.get(item.id) ?? item.product_variant_id
+        
+        const finalItem = {
+          ...item,
+          product_variant_id: variantId ?? undefined,
+        }
+        
+        console.log(`Building item for submission:`, {
+          id: finalItem.id,
+          product_variant_id: finalItem.product_variant_id,
+          confirmed_quantity: finalItem.confirmed_quantity,
+          confirmed_price: finalItem.confirmed_price,
+        })
+        
+        return finalItem
+      })
+      
+      console.log('Final items to send:', itemsWithVariants)
+      
       const request: ConfirmOrderRequest = {
         shipping_provider: shippingProvider,
         delivery_type: deliveryType,
@@ -444,14 +547,24 @@ export function ConfirmOrderDialog({
         customer_state: shippingWilayaName || undefined,
         customer_comments: customerComments || undefined,
         discount: discount || undefined,
-        items: validItems,
+        items: itemsWithVariants,
       }
 
+      console.log('Sending confirmation request:', request)
+      
       await apiClient.orders.confirm(companyId, order.id, request)
+      
+      console.log('Order confirmed successfully')
       toast.success('Order confirmed successfully')
       onOpenChange(false)
       onSuccess?.()
     } catch (error: any) {
+      console.error('Error confirming order:', error)
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response,
+        data: error.response?.data,
+      })
       toast.error(error.message || 'Failed to confirm order')
     } finally {
       setIsSubmitting(false)
@@ -505,6 +618,7 @@ export function ConfirmOrderDialog({
   const addNewItem = () => {
     const newItem: ConfirmOrderItemRequest = {
       id: getNextTempId,
+      product_variant_id: undefined,
       confirmed_quantity: 1,
       confirmed_price: 0,
     }
@@ -845,29 +959,6 @@ export function ConfirmOrderDialog({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {/* Show snapshot items in ul above the table */}
-                  {(() => {
-                    const snapshotItems = items
-                      .map((item) => {
-                        const orderItem = order.items.find((i) => i.id === item.id)
-                        return orderItem?.is_snapshot ? orderItem : null
-                      })
-                      .filter((item): item is OrderItem => item !== null)
-
-                    if (snapshotItems.length > 0) {
-                      return (
-                        <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1 mb-4 pl-4">
-                          {snapshotItems.map((orderItem) => (
-                            <li key={orderItem.id}>
-                              {orderItem.product_name || 'Product'}{orderItem.variant_name ? ` - ${orderItem.variant_name}` : ''}{orderItem.sku ? ` (${orderItem.sku})` : ''} x{orderItem.quantity} ({orderItem.price.toFixed(2)} DZD)
-                            </li>
-                          ))}
-                        </ul>
-                      )
-                    }
-                    return null
-                  })()}
-                  
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -880,11 +971,11 @@ export function ConfirmOrderDialog({
                     <TableBody>
                       {items
                         .filter((item) => {
+                          // Include all existing items (both snapshot and non-snapshot) and new items
+                          // Snapshot items can now be edited and confirmed
+                          if (item.id < 0) return true // New items
                           const orderItem = order.items.find((i) => i.id === item.id)
-                          // Include items that are either:
-                          // 1. Existing order items that are not snapshots
-                          // 2. New items (negative IDs)
-                          return item.id < 0 || (orderItem && !orderItem.is_snapshot)
+                          return !!orderItem // All existing items (snapshot or not)
                         })
                         .map((item) => {
                           const orderItem = order.items.find((i) => i.id === item.id) || null
@@ -949,6 +1040,7 @@ export function ConfirmOrderDialog({
                                   if (itemIndex !== -1) {
                                     newItems[itemIndex] = {
                                       ...newItems[itemIndex],
+                                      product_variant_id: variant.id,
                                       confirmed_price: variantPrice,
                                     }
                                   }

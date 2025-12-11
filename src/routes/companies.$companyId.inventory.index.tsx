@@ -1,20 +1,21 @@
-import { createRoute, useNavigate, Link } from '@tanstack/react-router'
-import { useState, useMemo } from 'react'
-import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
+import { CreateInventoryDialog } from '@/components/inventory/CreateInventoryDialog'
+import { InventoryMovementsDialog } from '@/components/inventory/InventoryMovementsDialog'
 import { InventoryTable } from '@/components/inventory/InventoryTable'
+import { ReorderPointDialog } from '@/components/inventory/ReorderPointDialog'
 import { StockAdjustmentDialog } from '@/components/inventory/StockAdjustmentDialog'
 import { StockReservationDialog } from '@/components/inventory/StockReservationDialog'
-import { InventoryMovementsDialog } from '@/components/inventory/InventoryMovementsDialog'
-import { CreateInventoryDialog } from '@/components/inventory/CreateInventoryDialog'
-import { useCompanyInventory } from '@/hooks/queries/use-inventory'
+import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useCompany } from '@/hooks/queries/use-companies'
-import { ArrowLeft, Plus, Search, Package, AlertTriangle, Lock } from 'lucide-react'
+import { useCompanyInventory } from '@/hooks/queries/use-inventory'
 import { rootRoute } from '@/main'
 import type { Inventory } from '@/types/api'
+import { Link, createRoute, useNavigate } from '@tanstack/react-router'
+import { AlertTriangle, ArrowLeft, Lock, Package, Plus, Search } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 export const CompanyInventoryRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -36,6 +37,7 @@ function CompanyInventoryPage() {
   const [reserveDialogOpen, setReserveDialogOpen] = useState(false)
   const [movementsDialogOpen, setMovementsDialogOpen] = useState(false)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [reorderDialogOpen, setReorderDialogOpen] = useState(false)
 
   // Filter inventory based on search query
   const filteredInventory = useMemo(() => {
@@ -58,9 +60,7 @@ function CompanyInventoryPage() {
     const totalItems = items.length
     const totalStock = items.reduce((sum, item) => sum + item.stock, 0)
     const totalReserved = items.reduce((sum, item) => sum + item.reserved_stock, 0)
-    const lowStockItems = items.filter(
-      (item) => item.available_stock > 0 && item.available_stock <= 10
-    ).length
+    const lowStockItems = items.filter((item) => item.is_low_stock).length
     const outOfStockItems = items.filter(
       (item) => item.available_stock <= 0 && item.is_active
     ).length
@@ -87,6 +87,11 @@ function CompanyInventoryPage() {
   const handleViewMovements = (item: Inventory) => {
     setSelectedInventory(item)
     setMovementsDialogOpen(true)
+  }
+
+  const handleEditReorderPoint = (item: Inventory) => {
+    setSelectedInventory(item)
+    setReorderDialogOpen(true)
   }
 
   if (companyLoading) {
@@ -234,6 +239,7 @@ function CompanyInventoryPage() {
                 onAdjustStock={handleAdjustStock}
                 onReserveStock={handleReserveStock}
                 onViewMovements={handleViewMovements}
+                onEditReorderPoint={handleEditReorderPoint}
               />
             )}
           </CardContent>
@@ -255,6 +261,11 @@ function CompanyInventoryPage() {
         inventory={selectedInventory}
         open={movementsDialogOpen}
         onOpenChange={setMovementsDialogOpen}
+      />
+      <ReorderPointDialog
+        inventory={selectedInventory}
+        open={reorderDialogOpen}
+        onOpenChange={setReorderDialogOpen}
       />
       <CreateInventoryDialog
         companyId={companyIdNum}
