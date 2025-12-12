@@ -469,125 +469,34 @@ export function ConfirmOrderDialog({
   }, [firstDeliveryCost, form])
 
   const onSubmit = async (data: ConfirmOrderFormValues) => {
-    console.log('=== FORM SUBMISSION DEBUG START ===')
-    console.log('1. onSubmit function called')
-    console.log('2. Order exists:', !!order)
-    console.log('3. Form data received:', data)
-    console.log('4. Form validation state:', form.formState)
-    console.log('5. Form errors (raw):', form.formState.errors)
-    console.log('5a. Form errors (JSON):', JSON.stringify(form.formState.errors, null, 2))
-    
     if (!order) {
-      console.log('6. ERROR: No order provided, returning early')
-      console.log('=== FORM SUBMISSION DEBUG END (EARLY RETURN) ===')
       return
     }
-
-    console.log('7. Order ID:', order.id)
-    console.log('8. Order items:', order.items)
-    console.log('8a. Order items details:', order.items.map(oi => ({ 
-      id: oi.id, 
-      product_variant_id: oi.product_variant_id,
-      quantity: oi.quantity,
-      price: oi.price
-    })))
-    console.log('9. Data items:', data.items)
-    console.log('9a. Data items details:', data.items.map((item, idx) => ({ 
-      index: idx,
-      product_variant_id: item.product_variant_id,
-      confirmed_quantity: item.confirmed_quantity,
-      confirmed_price: item.confirmed_price
-    })))
-    console.log('10. Selected variants Map:', Array.from(selectedVariants.entries()))
 
     // Filter valid items - only require product_variant_id
-    // The API can create new items if they don't match existing order items
+    // All items are sent without ID - API will always create new items (no updates to snapshot items)
     // Completely ignore the UUID 'id' field from useFieldArray
     const validItems = data.items
-      .map((item, index) => {
-        // Exclude items without product_variant_id (they can't be confirmed)
-        if (!item.product_variant_id) {
-          console.log(`11. Item ${index} excluded: NO_PRODUCT_VARIANT_ID`, item)
-          return null
-        }
-        
-        // Try to find matching order item by product_variant_id
-        let orderItem: OrderItem | undefined = order.items.find((oi) => oi.product_variant_id === item.product_variant_id)
-        
-        // If no match by product_variant_id, try matching by index position
-        // This handles cases where order items have null product_variant_id initially
-        if (!orderItem && index < order.items.length) {
-          const orderItemByIndex = order.items[index]
-          // Only match by index if order item has null/undefined product_variant_id
-          // (meaning it hasn't been assigned a variant yet, so position is reliable)
-          if (orderItemByIndex.product_variant_id === null || 
-              orderItemByIndex.product_variant_id === undefined) {
-            orderItem = orderItemByIndex
-            console.log(`11a. Item ${index} matched by INDEX (order item has null product_variant_id)`)
-          }
-        }
-        
-        // If we found a matching order item, include its ID
-        // If not, it's a new item and we'll omit the ID (API will create it)
-        const result = {
-          product_variant_id: item.product_variant_id,
-          confirmed_quantity: item.confirmed_quantity,
-          confirmed_price: item.confirmed_price,
-          ...(orderItem ? { id: orderItem.id } : {}), // Only include id if we found a matching order item
-        }
-        
-        console.log(`12. Item ${index} VALID:`, { 
-          formItem: { product_variant_id: item.product_variant_id, confirmed_quantity: item.confirmed_quantity, confirmed_price: item.confirmed_price },
-          orderItem: orderItem ? { id: orderItem.id, product_variant_id: orderItem.product_variant_id } : null,
-          isNewItem: !orderItem,
-          result
-        })
-        
-        return result
-      })
-      .filter((item): item is { product_variant_id: number; confirmed_quantity: number; confirmed_price: number; id?: number } => item !== null)
-
-    console.log('13. Valid items count:', validItems.length)
-    console.log('14. Valid items:', validItems)
+      .filter((item) => item.product_variant_id !== undefined && item.product_variant_id !== null)
+      .map((item) => ({
+        product_variant_id: item.product_variant_id!,
+        confirmed_quantity: item.confirmed_quantity,
+        confirmed_price: item.confirmed_price,
+      }))
 
     if (validItems.length === 0) {
-      console.log('15. ERROR: No valid items found')
-      console.log('=== FORM SUBMISSION DEBUG END (NO VALID ITEMS) ===')
-        toast.error('At least one valid order item is required to confirm the order.')
+      toast.error('At least one valid order item is required to confirm the order.')
       return
     }
 
-    // Build items for API - items already have product_variant_id from form
-    // Include id only if item matched an existing order item (for updates)
-    // Omit id for new items (API will create them)
-    console.log('16. Building items for API...')
-    const itemsWithVariants: ConfirmOrderItemRequest[] = validItems
-      .map((item, index) => {
-        console.log(`17. Processing item ${index}:`, item)
-        
-        if (!item.product_variant_id) {
-          console.log(`18. Item ${index} excluded: NO_VARIANT_ID`)
-          return null
-        }
-        
-        const result: ConfirmOrderItemRequest = {
-          ...(item.id ? { id: item.id } : {}), // Only include id if it exists (existing item)
-          product_variant_id: item.product_variant_id,
-          confirmed_quantity: item.confirmed_quantity,
-          confirmed_price: item.confirmed_price,
-        }
-        
-        console.log(`19. Item ${index} result:`, result)
-        return result
-      })
-      .filter((item): item is ConfirmOrderItemRequest => item !== null)
-
-    console.log('21. Items with variants count:', itemsWithVariants.length)
-    console.log('22. Items with variants:', itemsWithVariants)
+    // Build items for API - all items sent without ID (API will create all items fresh)
+    const itemsWithVariants: ConfirmOrderItemRequest[] = validItems.map((item) => ({
+      product_variant_id: item.product_variant_id,
+      confirmed_quantity: item.confirmed_quantity,
+      confirmed_price: item.confirmed_price,
+    }))
 
     if (itemsWithVariants.length === 0) {
-      console.log('23. ERROR: No items with variants')
-      console.log('=== FORM SUBMISSION DEBUG END (NO ITEMS WITH VARIANTS) ===')
       toast.error('All items must have a product variant selected.')
       return
     }
@@ -609,15 +518,8 @@ export function ConfirmOrderDialog({
         items: itemsWithVariants,
       }
 
-    console.log('24. Final request object:', request)
-    console.log('25. Company ID:', companyId)
-    console.log('26. Order ID:', order.id)
-    console.log('27. Calling API...')
-
     try {
-      const response = await apiClient.orders.confirm(companyId, order.id, request)
-      console.log('28. API call successful:', response)
-      console.log('=== FORM SUBMISSION DEBUG END (SUCCESS) ===')
+      await apiClient.orders.confirm(companyId, order.id, request)
       toast.success('Order confirmed successfully')
       onOpenChange(false)
       onSuccess?.()
@@ -1213,20 +1115,9 @@ export function ConfirmOrderDialog({
                             type="button"
                             variant="outline"
                             onClick={(e) => {
-                              console.log('=== BUTTON CLICK DEBUG ===')
-                              console.log('Button clicked!')
-                              console.log('Event:', e)
-                              console.log('Event type:', e.type)
-                              console.log('Event target:', e.target)
-                              console.log('Event currentTarget:', e.currentTarget)
-                              
                               e.preventDefault()
                               e.stopPropagation()
-                              
-                              console.log('Calling addNewItem...')
                               addNewItem()
-                              console.log('addNewItem call completed')
-                              console.log('=== END BUTTON CLICK DEBUG ===')
                             }}
                             className="w-full"
                           >
@@ -1331,28 +1222,9 @@ export function ConfirmOrderDialog({
               <Button 
                 type="submit" 
                 disabled={form.formState.isSubmitting}
-                onClick={(e) => {
-                  console.log('=== SUBMIT BUTTON CLICK DEBUG ===')
-                  console.log('Submit button clicked!')
-                  console.log('Event:', e)
-                  console.log('Form state:', {
-                    isSubmitting: form.formState.isSubmitting,
-                    isValid: form.formState.isValid,
-                    errors: form.formState.errors,
-                    isDirty: form.formState.isDirty,
-                  })
-                  console.log('Form errors (expanded):', JSON.stringify(form.formState.errors, null, 2))
-                  console.log('Form values:', form.getValues())
-                  console.log('Form values (expanded):', JSON.stringify(form.getValues(), null, 2))
-                  
-                  // Try to trigger validation manually
-                  form.trigger().then((isValid) => {
-                    console.log('Manual validation trigger result:', isValid)
-                    console.log('Errors after trigger:', JSON.stringify(form.formState.errors, null, 2))
-                  })
-                  
-                  console.log('=== END SUBMIT BUTTON CLICK DEBUG ===')
-                  // Don't prevent default - let form handle submission
+                onClick={() => {
+                  // Trigger validation manually
+                  form.trigger()
                 }}
               >
                 {form.formState.isSubmitting ? 'Confirming...' : 'Confirm Order'}
