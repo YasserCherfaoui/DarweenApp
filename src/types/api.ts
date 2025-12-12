@@ -1556,7 +1556,7 @@ export interface ConfirmOrderRequest {
 }
 
 export interface ConfirmOrderItemRequest {
-  id: number
+  id?: number
   product_variant_id?: number
   confirmed_quantity?: number
   confirmed_price?: number

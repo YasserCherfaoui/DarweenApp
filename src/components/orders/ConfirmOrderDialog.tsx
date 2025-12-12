@@ -15,6 +15,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -46,9 +54,53 @@ import { useYalidineConfigs } from '@/hooks/queries/use-yalidine-configs'
 import { apiClient } from '@/lib/api-client'
 import { cn } from '@/lib/utils'
 import type { ConfirmOrderItemRequest, ConfirmOrderRequest, Order, OrderItem, Product, ProductVariant } from '@/types/api'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Check, ChevronsUpDown, Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
+import { z } from 'zod'
+
+// Zod schema for order confirmation
+// Note: useFieldArray adds a UUID 'id' field automatically - we ignore it completely
+// We only track items by product_variant_id, not by numeric IDs
+const orderItemSchema = z.object({
+  product_variant_id: z.number().optional(),
+  confirmed_quantity: z.number().min(0.01, 'Quantity must be greater than 0'),
+  confirmed_price: z.number().min(0, 'Price must be positive'),
+}).passthrough() // Allow useFieldArray's UUID id field but ignore it
+
+const confirmOrderSchema = z.object({
+  shipping_provider: z.enum(['yalidine', 'my_delivery']),
+  delivery_type: z.enum(['home', 'stop_desk']),
+  from_wilaya_id: z.number().min(1, 'Origin wilaya is required'),
+  shipping_wilaya_id: z.number().min(1, 'Shipping wilaya is required'),
+  shipping_wilaya_name: z.string().optional(),
+  commune_id: z.number().optional(),
+  center_id: z.number().optional(),
+  second_delivery_cost: z.number().min(0, 'Delivery cost must be positive'),
+  customer_full_name: z.string().min(1, 'Full name is required'),
+  customer_phone: z.string().min(1, 'Phone number is required'),
+  customer_phone2: z.string().optional(),
+  customer_address: z.string().min(1, 'Address is required'),
+  customer_state: z.string().optional(),
+  customer_comments: z.string().optional(),
+  discount: z.number().min(0, 'Discount cannot be negative').optional(),
+  items: z.array(orderItemSchema).min(1, 'At least one item is required'),
+}).refine(
+  (data) => {
+    if (data.delivery_type === 'home') {
+      return !!data.commune_id
+    }
+    return !!data.center_id
+  },
+  {
+    message: 'Commune or center is required based on delivery type',
+    path: ['commune_id'],
+  }
+)
+
+type ConfirmOrderFormValues = z.infer<typeof confirmOrderSchema>
 
 interface OrderItemTableRowProps {
   index: number
@@ -76,12 +128,10 @@ function OrderItemTableRow({
   const [comboboxOpen, setComboboxOpen] = useState(false)
 
   const getVariantDisplayValue = (variant: (ProductVariant & { product?: Product }) | null | undefined) => {
-    // If no variant selected, show placeholder
     if (!variant) {
       return 'Select variant...'
     }
     
-    // Show only SKU, truncate if long (CSS truncate class will also handle visual truncation)
     if (variant.sku) {
       return variant.sku
     }
@@ -179,7 +229,6 @@ function OrderItemTableRow({
             step="0.01"
             min="0"
             value={
-              // If variant is selected and confirmed_price is 0 or not set, use product's base_retail_price
               selectedVariant && (item.confirmed_price === undefined || item.confirmed_price === null || item.confirmed_price === 0)
                 ? selectedVariant.product?.base_retail_price ?? 0
                 : item.confirmed_price !== undefined && item.confirmed_price !== null
@@ -224,34 +273,12 @@ export function ConfirmOrderDialog({
   companyId,
   onSuccess,
 }: ConfirmOrderDialogProps) {
-  const [shippingProvider, setShippingProvider] = useState<'yalidine' | 'my_delivery'>('yalidine')
-  const [deliveryType, setDeliveryType] = useState<'home' | 'stop_desk'>('home')
-  const [shippingWilayaId, setShippingWilayaId] = useState<number | undefined>()
-  const [shippingWilayaName, setShippingWilayaName] = useState<string>('')
-  const [fromWilayaId, setFromWilayaId] = useState<number | undefined>()
-  const [communeId, setCommuneId] = useState<number | undefined>()
-  const [centerId, setCenterId] = useState<number | undefined>()
-  const [secondDeliveryCost, setSecondDeliveryCost] = useState(0)
   const deliveryFeeInitializedRef = useRef(false)
   const defaultFromWilayaIdSetRef = useRef(false)
-
-  // Customer details state
-  const [customerFullName, setCustomerFullName] = useState('')
-  const [customerPhone, setCustomerPhone] = useState('')
-  const [customerPhone2, setCustomerPhone2] = useState('')
-  const [customerAddress, setCustomerAddress] = useState('')
-  const [_customerState, setCustomerState] = useState('')
-  const [customerComments, setCustomerComments] = useState('')
-  const [discount, setDiscount] = useState(0)
-
-  const [items, setItems] = useState<ConfirmOrderItemRequest[]>([])
   const [selectedVariants, setSelectedVariants] = useState<Map<number, number>>(new Map())
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Fetch Yalidine data
   const { data: wilayasData } = useYalidineWilayas(companyId)
-  const { data: communesData } = useYalidineCommunes(companyId, shippingWilayaId)
-  const { data: centersData } = useYalidineCenters(companyId, shippingWilayaId)
   const { data: yalidineConfigs } = useYalidineConfigs(companyId)
   const defaultYalidineConfig = useMemo(() => {
     return yalidineConfigs?.find((config) => config.is_default && config.is_active)
@@ -260,7 +287,7 @@ export function ConfirmOrderDialog({
   // Fetch products for variant information
   const { data: productsData } = useProducts(companyId, { page: 1, limit: 1000 })
   
-  // Build all variants list - memoized to prevent unnecessary re-renders
+  // Build all variants list
   const allVariants = useMemo(() => {
     const variants: Array<ProductVariant & { product?: Product }> = []
     if (productsData?.data) {
@@ -277,25 +304,66 @@ export function ConfirmOrderDialog({
     return variants
   }, [productsData])
 
-  // Fetch delivery fee using React Query
+  // Initialize form with default values
+  const form = useForm<ConfirmOrderFormValues>({
+    resolver: zodResolver(confirmOrderSchema),
+    defaultValues: {
+      shipping_provider: 'yalidine',
+      delivery_type: 'home',
+      from_wilaya_id: defaultYalidineConfig?.from_wilaya_id || 0,
+      shipping_wilaya_id: 0,
+      shipping_wilaya_name: '',
+      commune_id: undefined,
+      center_id: undefined,
+      second_delivery_cost: 0,
+      customer_full_name: '',
+      customer_phone: '',
+      customer_phone2: '',
+      customer_address: '',
+      customer_state: '',
+      customer_comments: '',
+      discount: 0,
+      items: [],
+    },
+    mode: 'onChange',
+  })
+
+  const { fields, append, remove, update } = useFieldArray({
+    control: form.control,
+    name: 'items',
+  })
+
+
+  // Watch form values for dependent queries
+  const shippingWilayaId = form.watch('shipping_wilaya_id')
+  const deliveryType = form.watch('delivery_type')
+  const communeId = form.watch('commune_id')
+  const centerId = form.watch('center_id')
+  const fromWilayaId = form.watch('from_wilaya_id')
+
+  // Fetch communes and centers based on selected wilaya
+  const { data: communesDataForWilaya } = useYalidineCommunes(companyId, shippingWilayaId || undefined)
+  const { data: centersDataForWilaya } = useYalidineCenters(companyId, shippingWilayaId || undefined)
+
+  // Fetch delivery fee
   const { data: deliveryFeeData, isLoading: loadingDeliveryFee } = useDeliveryFee(
     companyId,
     {
-      provider: shippingProvider,
-      deliveryType,
-      communeId,
-      centerId,
-      fromWilayaId,
-      shippingWilayaId,
+      provider: form.watch('shipping_provider'),
+      deliveryType: form.watch('delivery_type'),
+      communeId: communeId || undefined,
+      centerId: centerId || undefined,
+      fromWilayaId: fromWilayaId || undefined,
+      shippingWilayaId: shippingWilayaId || undefined,
     }
   )
 
   const firstDeliveryCost = deliveryFeeData?.fee || 0
 
-  // Initialize all fields from order when it changes
+  // Initialize form from order
   useEffect(() => {
-    if (order) {
-      // Initialize selected variants from order items first (needed for price calculation)
+    if (order && open) {
+      // Initialize selected variants
       const initialVariants = new Map<number, number>()
       order.items.forEach((item) => {
         if (item.product_variant_id) {
@@ -304,12 +372,10 @@ export function ConfirmOrderDialog({
       })
       setSelectedVariants(initialVariants)
       
-      // Initialize items from order
-      // If item has a variant and no confirmed_price, use product's base_retail_price
-      const initialItems: ConfirmOrderItemRequest[] = order.items.map((item) => {
+      // Initialize items - don't include id, we'll match by product_variant_id instead
+      const initialItems = order.items.map((item) => {
         let price = item.confirmed_price ?? item.price
         
-        // If no confirmed_price and item has a variant, try to get base_retail_price from product
         if (!item.confirmed_price && item.product_variant_id && allVariants.length > 0) {
           const variant = allVariants.find((v) => v.id === item.product_variant_id)
           if (variant?.product?.base_retail_price !== undefined) {
@@ -318,331 +384,329 @@ export function ConfirmOrderDialog({
         }
         
         return {
-          id: item.id,
+          // Don't include id - we'll match by product_variant_id
+          // useFieldArray will add its own UUID id, but we ignore it
           product_variant_id: item.product_variant_id ?? undefined,
           confirmed_quantity: item.confirmed_quantity ?? item.quantity,
           confirmed_price: price,
         }
       })
-      setItems(initialItems)
-      
-      // Initialize shipping fields
-      setShippingProvider((order.shipping_provider === 'yalidine' || order.shipping_provider === 'my_delivery') ? order.shipping_provider : 'yalidine')
-      setDeliveryType(order.delivery_type || 'home')
-      setCommuneId(order.commune_id)
-      setCenterId(order.center_id)
-      setSecondDeliveryCost(order.second_delivery_cost || 0)
-      
-      // Initialize customer details
-      setCustomerFullName(order.customer_full_name || '')
-      setCustomerPhone(order.customer_phone || '')
-      setCustomerPhone2(order.customer_phone2 || '')
-      setCustomerAddress(order.customer_address || '')
-      setCustomerState(order.customer_state || '')
-      setCustomerComments(order.customer_comments || '')
-      setDiscount(order.discount || 0)
-      
-      // Try to find shipping wilaya ID from customer_state
+
+      // Find shipping wilaya from customer_state
+      let shippingWilayaId = 0
+      let shippingWilayaName = ''
       if (order.customer_state && wilayasData?.data) {
         const matchingWilaya = wilayasData.data.find(
           (w) => w.name.toLowerCase() === order.customer_state.toLowerCase()
         )
         if (matchingWilaya) {
-          setShippingWilayaId(matchingWilaya.id)
-          setShippingWilayaName(matchingWilaya.name)
+          shippingWilayaId = matchingWilaya.id
+          shippingWilayaName = matchingWilaya.name
         }
       }
-      
-      // Reset delivery fee initialization
-      deliveryFeeInitializedRef.current = false
-    }
-  }, [order, wilayasData, allVariants])
 
-  // Set default from_wilaya_id from Yalidine config (only once)
-  const defaultFromWilayaId = useMemo(() => {
-    return defaultYalidineConfig?.from_wilaya_id
-  }, [defaultYalidineConfig])
-  
+      // Reset form with order data
+      form.reset({
+        shipping_provider: (order.shipping_provider === 'yalidine' || order.shipping_provider === 'my_delivery') 
+          ? order.shipping_provider 
+          : 'yalidine',
+        delivery_type: order.delivery_type || 'home',
+        from_wilaya_id: defaultYalidineConfig?.from_wilaya_id || 0,
+        shipping_wilaya_id: shippingWilayaId,
+        shipping_wilaya_name: shippingWilayaName,
+        commune_id: order.commune_id || undefined,
+        center_id: order.center_id || undefined,
+        second_delivery_cost: order.second_delivery_cost || 0,
+        customer_full_name: order.customer_full_name || '',
+        customer_phone: order.customer_phone || '',
+        customer_phone2: order.customer_phone2 || '',
+        customer_address: order.customer_address || '',
+        customer_state: shippingWilayaName,
+        customer_comments: order.customer_comments || '',
+        discount: order.discount || 0,
+        items: initialItems,
+      })
+
+      deliveryFeeInitializedRef.current = false
+      defaultFromWilayaIdSetRef.current = false
+    }
+  }, [order, open, wilayasData, allVariants, defaultYalidineConfig, form])
+
+  // Set default from_wilaya_id from config
   useEffect(() => {
-    // Only set once, and only if we have a valid value and haven't set it yet
-    if (defaultFromWilayaId && !defaultFromWilayaIdSetRef.current && (!fromWilayaId || isNaN(fromWilayaId))) {
-      setFromWilayaId(defaultFromWilayaId)
+    const currentFromWilayaId = form.getValues('from_wilaya_id')
+    if (defaultYalidineConfig?.from_wilaya_id && !defaultFromWilayaIdSetRef.current && (!currentFromWilayaId || currentFromWilayaId === 0)) {
+      form.setValue('from_wilaya_id', defaultYalidineConfig.from_wilaya_id)
       defaultFromWilayaIdSetRef.current = true
     }
-  }, [defaultFromWilayaId, fromWilayaId])
+  }, [defaultYalidineConfig, form])
 
-  // Sync shipping state to customer state
+  // Sync shipping wilaya name to customer state
+  const shippingWilayaName = form.watch('shipping_wilaya_name')
   useEffect(() => {
     if (shippingWilayaName) {
-      setCustomerState(shippingWilayaName)
+      form.setValue('customer_state', shippingWilayaName)
     }
-  }, [shippingWilayaName])
+  }, [shippingWilayaName, form])
 
   // Reset commune/center when wilaya changes
   useEffect(() => {
-    setCommuneId(undefined)
-    setCenterId(undefined)
-    setSecondDeliveryCost(0)
+    if (shippingWilayaId) {
+      form.setValue('commune_id', undefined)
+      form.setValue('center_id', undefined)
     deliveryFeeInitializedRef.current = false
-  }, [shippingWilayaId])
+    }
+  }, [shippingWilayaId, form])
 
-  // Sync delivery fee from React Query to editable state (only once when fee becomes available)
+  // Sync delivery fee from React Query
   useEffect(() => {
     if (firstDeliveryCost > 0 && !deliveryFeeInitializedRef.current) {
-      setSecondDeliveryCost(firstDeliveryCost)
+      form.setValue('second_delivery_cost', firstDeliveryCost)
       deliveryFeeInitializedRef.current = true
     } else if (firstDeliveryCost === 0) {
       deliveryFeeInitializedRef.current = false
     }
-  }, [firstDeliveryCost])
+  }, [firstDeliveryCost, form])
 
-  const handleSubmit = async () => {
-    if (!order) return
-
-    if (!fromWilayaId) {
-      toast.error('Please select an origin wilaya')
-      return
-    }
-
-    if (deliveryType === 'home' && !communeId) {
-      toast.error('Please select a commune')
-      return
-    }
-
-    if (deliveryType === 'stop_desk' && !centerId) {
-      toast.error('Please select a center')
-      return
-    }
-
-    // Debug logging: Log all items and their properties
-    console.log('=== CONFIRM ORDER VALIDATION DEBUG ===')
-    console.log('All items in state:', items)
-    console.log('Order items from API:', order.items)
-    console.log('Selected variants:', Array.from(selectedVariants.entries()))
-
-    // Analyze each item
-    const itemAnalysis = items.map((item) => {
-      const orderItem = order.items.find((i) => i.id === item.id)
-      const isNew = item.id < 0
-      const isSnapshot = orderItem?.is_snapshot === true
-      const exists = !!orderItem
-      const isEditable = exists && !isSnapshot
-      
-      return {
-        item,
-        orderItem,
-        isNew,
-        isSnapshot,
-        exists,
-        isEditable,
-        reason: isNew 
-          ? 'NEW_ITEM' 
-          : !exists 
-            ? 'NOT_FOUND' 
-            : isSnapshot 
-              ? 'SNAPSHOT' 
-              : 'VALID'
-      }
-    })
+  const onSubmit = async (data: ConfirmOrderFormValues) => {
+    console.log('=== FORM SUBMISSION DEBUG START ===')
+    console.log('1. onSubmit function called')
+    console.log('2. Order exists:', !!order)
+    console.log('3. Form data received:', data)
+    console.log('4. Form validation state:', form.formState)
+    console.log('5. Form errors (raw):', form.formState.errors)
+    console.log('5a. Form errors (JSON):', JSON.stringify(form.formState.errors, null, 2))
     
-    console.log('Item analysis:', itemAnalysis)
-
-    // Filter items to include all existing items (both snapshot and non-snapshot)
-    // The backend can update snapshot items - they just need to be sent with confirmed values
-    // Exclude only new items (negative IDs) as they don't exist in the database yet
-    const validItems = items.filter((item) => {
-      // Exclude new items (negative IDs) - they can't be confirmed because they don't exist in DB
-      if (item.id < 0) {
-        console.log(`Item ${item.id} excluded: NEW_ITEM (negative ID - doesn't exist in database)`)
-        return false
-      }
-      
-      // Find the corresponding order item
-      const orderItem = order.items.find((i) => i.id === item.id)
-      
-      if (!orderItem) {
-        console.log(`Item ${item.id} excluded: NOT_FOUND in order.items`)
-        return false
-      }
-      
-      // Include both snapshot and non-snapshot items - backend can update both
-      // Snapshot items can be "confirmed" by sending confirmed_quantity and confirmed_price
-      const isSnapshot = orderItem.is_snapshot
-      console.log(`Item ${item.id} included: VALID (${isSnapshot ? 'SNAPSHOT' : 'NON-SNAPSHOT'} - can be confirmed)`)
-      return true
-    })
-    
-    const excludedItems = items.filter((item) => {
-      // Only new items (negative IDs) are excluded - they don't exist in database
-      if (item.id < 0) return true
-      // All existing items (including snapshots) can be confirmed
-      return false
-    })
-    
-    console.log('Valid items count:', validItems.length)
-    console.log('Valid items:', validItems)
-    console.log('Excluded items count:', excludedItems.length)
-    console.log('Excluded items:', excludedItems)
-
-    if (excludedItems.length > 0) {
-      const newItemsCount = excludedItems.filter((item) => item.id < 0).length
-      
-      if (newItemsCount > 0) {
-        toast.warning(
-          `${newItemsCount} new item(s) will be excluded from confirmation. New items cannot be confirmed - only existing order items can be confirmed.`
-        )
-      }
-    }
-
-    if (validItems.length === 0) {
-      // Check what types of items we have
-      const newItemsCount = items.filter((item) => item.id < 0).length
-      const existingItemsCount = items.filter((item) => item.id > 0).length
-      
-      if (existingItemsCount === 0 && newItemsCount > 0) {
-        toast.error('Cannot confirm order: New items cannot be confirmed. Only existing order items can be confirmed. Please ensure the order has at least one existing item.')
-      } else if (existingItemsCount === 0) {
-        toast.error('Cannot confirm order: No existing order items found. The order must have at least one item to be confirmed.')
-      } else {
-        toast.error('At least one valid order item is required to confirm the order.')
-      }
+    if (!order) {
+      console.log('6. ERROR: No order provided, returning early')
+      console.log('=== FORM SUBMISSION DEBUG END (EARLY RETURN) ===')
       return
     }
 
-    setIsSubmitting(true)
-    try {
-      // Build items with product_variant_id from selected variants
-      const itemsWithVariants: ConfirmOrderItemRequest[] = validItems.map((item) => {
-        // Get variant ID from selected variants map, or from the item itself if it exists
-        const variantId = selectedVariants.get(item.id) ?? item.product_variant_id
-        
-        const finalItem = {
-          ...item,
-          product_variant_id: variantId ?? undefined,
+    console.log('7. Order ID:', order.id)
+    console.log('8. Order items:', order.items)
+    console.log('8a. Order items details:', order.items.map(oi => ({ 
+      id: oi.id, 
+      product_variant_id: oi.product_variant_id,
+      quantity: oi.quantity,
+      price: oi.price
+    })))
+    console.log('9. Data items:', data.items)
+    console.log('9a. Data items details:', data.items.map((item, idx) => ({ 
+      index: idx,
+      product_variant_id: item.product_variant_id,
+      confirmed_quantity: item.confirmed_quantity,
+      confirmed_price: item.confirmed_price
+    })))
+    console.log('10. Selected variants Map:', Array.from(selectedVariants.entries()))
+
+    // Filter valid items - only require product_variant_id
+    // The API can create new items if they don't match existing order items
+    // Completely ignore the UUID 'id' field from useFieldArray
+    const validItems = data.items
+      .map((item, index) => {
+        // Exclude items without product_variant_id (they can't be confirmed)
+        if (!item.product_variant_id) {
+          console.log(`11. Item ${index} excluded: NO_PRODUCT_VARIANT_ID`, item)
+          return null
         }
         
-        console.log(`Building item for submission:`, {
-          id: finalItem.id,
-          product_variant_id: finalItem.product_variant_id,
-          confirmed_quantity: finalItem.confirmed_quantity,
-          confirmed_price: finalItem.confirmed_price,
+        // Try to find matching order item by product_variant_id
+        let orderItem: OrderItem | undefined = order.items.find((oi) => oi.product_variant_id === item.product_variant_id)
+        
+        // If no match by product_variant_id, try matching by index position
+        // This handles cases where order items have null product_variant_id initially
+        if (!orderItem && index < order.items.length) {
+          const orderItemByIndex = order.items[index]
+          // Only match by index if order item has null/undefined product_variant_id
+          // (meaning it hasn't been assigned a variant yet, so position is reliable)
+          if (orderItemByIndex.product_variant_id === null || 
+              orderItemByIndex.product_variant_id === undefined) {
+            orderItem = orderItemByIndex
+            console.log(`11a. Item ${index} matched by INDEX (order item has null product_variant_id)`)
+          }
+        }
+        
+        // If we found a matching order item, include its ID
+        // If not, it's a new item and we'll omit the ID (API will create it)
+        const result = {
+          product_variant_id: item.product_variant_id,
+          confirmed_quantity: item.confirmed_quantity,
+          confirmed_price: item.confirmed_price,
+          ...(orderItem ? { id: orderItem.id } : {}), // Only include id if we found a matching order item
+        }
+        
+        console.log(`12. Item ${index} VALID:`, { 
+          formItem: { product_variant_id: item.product_variant_id, confirmed_quantity: item.confirmed_quantity, confirmed_price: item.confirmed_price },
+          orderItem: orderItem ? { id: orderItem.id, product_variant_id: orderItem.product_variant_id } : null,
+          isNewItem: !orderItem,
+          result
         })
         
-        return finalItem
+        return result
       })
-      
-      console.log('Final items to send:', itemsWithVariants)
+      .filter((item): item is { product_variant_id: number; confirmed_quantity: number; confirmed_price: number; id?: number } => item !== null)
+
+    console.log('13. Valid items count:', validItems.length)
+    console.log('14. Valid items:', validItems)
+
+    if (validItems.length === 0) {
+      console.log('15. ERROR: No valid items found')
+      console.log('=== FORM SUBMISSION DEBUG END (NO VALID ITEMS) ===')
+        toast.error('At least one valid order item is required to confirm the order.')
+      return
+    }
+
+    // Build items for API - items already have product_variant_id from form
+    // Include id only if item matched an existing order item (for updates)
+    // Omit id for new items (API will create them)
+    console.log('16. Building items for API...')
+    const itemsWithVariants: ConfirmOrderItemRequest[] = validItems
+      .map((item, index) => {
+        console.log(`17. Processing item ${index}:`, item)
+        
+        if (!item.product_variant_id) {
+          console.log(`18. Item ${index} excluded: NO_VARIANT_ID`)
+          return null
+        }
+        
+        const result: ConfirmOrderItemRequest = {
+          ...(item.id ? { id: item.id } : {}), // Only include id if it exists (existing item)
+          product_variant_id: item.product_variant_id,
+          confirmed_quantity: item.confirmed_quantity,
+          confirmed_price: item.confirmed_price,
+        }
+        
+        console.log(`19. Item ${index} result:`, result)
+        return result
+      })
+      .filter((item): item is ConfirmOrderItemRequest => item !== null)
+
+    console.log('21. Items with variants count:', itemsWithVariants.length)
+    console.log('22. Items with variants:', itemsWithVariants)
+
+    if (itemsWithVariants.length === 0) {
+      console.log('23. ERROR: No items with variants')
+      console.log('=== FORM SUBMISSION DEBUG END (NO ITEMS WITH VARIANTS) ===')
+      toast.error('All items must have a product variant selected.')
+      return
+    }
       
       const request: ConfirmOrderRequest = {
-        shipping_provider: shippingProvider,
-        delivery_type: deliveryType,
-        commune_id: deliveryType === 'home' ? communeId : undefined,
-        center_id: deliveryType === 'stop_desk' ? centerId : undefined,
-        second_delivery_cost: secondDeliveryCost,
-        from_wilaya_id: fromWilayaId,
-        customer_full_name: customerFullName || undefined,
-        customer_phone: customerPhone || undefined,
-        customer_phone2: customerPhone2 || undefined,
-        customer_address: customerAddress || undefined,
-        customer_state: shippingWilayaName || undefined,
-        customer_comments: customerComments || undefined,
-        discount: discount || undefined,
+      shipping_provider: data.shipping_provider,
+      delivery_type: data.delivery_type,
+      commune_id: data.delivery_type === 'home' ? data.commune_id : undefined,
+      center_id: data.delivery_type === 'stop_desk' ? data.center_id : undefined,
+      second_delivery_cost: data.second_delivery_cost,
+      from_wilaya_id: data.from_wilaya_id,
+      customer_full_name: data.customer_full_name || undefined,
+      customer_phone: data.customer_phone || undefined,
+      customer_phone2: data.customer_phone2 || undefined,
+      customer_address: data.customer_address || undefined,
+      customer_state: data.shipping_wilaya_name || undefined,
+      customer_comments: data.customer_comments || undefined,
+      discount: data.discount || undefined,
         items: itemsWithVariants,
       }
 
-      console.log('Sending confirmation request:', request)
-      
-      await apiClient.orders.confirm(companyId, order.id, request)
-      
-      console.log('Order confirmed successfully')
+    console.log('24. Final request object:', request)
+    console.log('25. Company ID:', companyId)
+    console.log('26. Order ID:', order.id)
+    console.log('27. Calling API...')
+
+    try {
+      const response = await apiClient.orders.confirm(companyId, order.id, request)
+      console.log('28. API call successful:', response)
+      console.log('=== FORM SUBMISSION DEBUG END (SUCCESS) ===')
       toast.success('Order confirmed successfully')
       onOpenChange(false)
       onSuccess?.()
     } catch (error: any) {
-      console.error('Error confirming order:', error)
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response,
-        data: error.response?.data,
-      })
+      console.error('=== FORM SUBMISSION ERROR ===')
+      console.error('29. Error confirming order:', error)
+      console.error('30. Error message:', error.message)
+      console.error('31. Error response:', error.response)
+      console.error('32. Error response data:', error.response?.data)
+      console.error('33. Error stack:', error.stack)
+      console.error('=== END FORM SUBMISSION ERROR ===')
       toast.error(error.message || 'Failed to confirm order')
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
-  // Helper function to get the effective price for an item
+  // Helper to get item price
   const getItemPrice = useMemo(() => {
-    return (item: ConfirmOrderItemRequest, orderItem: OrderItem | null) => {
-      // If confirmed_price is explicitly set (including 0), use it
+    return (item: { product_variant_id?: number; confirmed_price?: number }, orderItem: OrderItem | null) => {
       if (item.confirmed_price !== undefined && item.confirmed_price !== null) {
         return item.confirmed_price
       }
-      // Otherwise, try to get price from selected variant's product
-      const variantId = selectedVariants.get(item.id)
-      if (variantId) {
-        const variant = allVariants.find((v) => v.id === variantId)
+      // Try to get price from variant's product
+      if (item.product_variant_id) {
+        const variant = allVariants.find((v) => v.id === item.product_variant_id)
         if (variant?.product?.base_retail_price !== undefined) {
           return variant.product.base_retail_price
         }
       }
-      // Fallback to orderItem price or 0
       return orderItem?.price ?? 0
     }
-  }, [selectedVariants, allVariants])
+  }, [allVariants])
 
+  // Calculate total
   const calculateTotal = useMemo(() => {
-    // Only include items that have a selected variant
+    const items = form.watch('items')
+    const secondDeliveryCost = form.watch('second_delivery_cost')
+    const discount = form.watch('discount') || 0
+
     const productTotal = items.reduce((sum, item) => {
-      const hasSelectedVariant = selectedVariants.has(item.id)
-      if (!hasSelectedVariant) {
+      // Find order item by product_variant_id
+      const orderItem = item.product_variant_id
+        ? order?.items.find((oi) => oi.product_variant_id === item.product_variant_id) || null
+        : null
+      
+      // Only include items that have a product_variant_id (selected variant)
+      if (!item.product_variant_id) {
         return sum
       }
-      const orderItem = order?.items.find((i) => i.id === item.id) || null
+      
       const price = getItemPrice(item, orderItem)
       return sum + (item.confirmed_quantity ?? 0) * price
     }, 0)
+    
     return productTotal + secondDeliveryCost - discount
-  }, [items, selectedVariants, secondDeliveryCost, discount, getItemPrice, order])
+  }, [form.watch('items'), form.watch('second_delivery_cost'), form.watch('discount'), getItemPrice, order])
 
-  // Generate a temporary ID for new items (negative to distinguish from real order item IDs)
-  const getNextTempId = useMemo(() => {
-    const existingIds = items.map((item) => item.id)
-    let tempId = -1
-    while (existingIds.includes(tempId)) {
-      tempId--
-    }
-    return tempId
-  }, [items])
-
+  // Add new item
   const addNewItem = () => {
-    const newItem: ConfirmOrderItemRequest = {
-      id: getNextTempId,
+    try {
+      const newItem: z.infer<typeof orderItemSchema> = {
       product_variant_id: undefined,
       confirmed_quantity: 1,
       confirmed_price: 0,
     }
-    setItems([...items, newItem])
+      
+      append(newItem, { shouldFocus: false })
+    } catch (error) {
+      console.error('Error adding new item:', error)
+      toast.error('Failed to add new item')
+    }
   }
 
   const wilayas = wilayasData?.data || []
-  const communes = communesData?.data || []
-  const centers = centersData?.data || []
+  const communes = communesDataForWilaya?.data || []
+  const centers = centersDataForWilaya?.data || []
 
-  // Compute selected commune/center from React Query data
   const selectedCommune = useMemo(() => {
-    if (communeId && communesData?.data) {
-      return communesData.data.find((c) => c.id === communeId) || null
+    if (communeId && communesDataForWilaya?.data) {
+      return communesDataForWilaya.data.find((c) => c.id === communeId) || null
     }
     return null
-  }, [communeId, communesData])
+  }, [communeId, communesDataForWilaya])
 
   const selectedCenter = useMemo(() => {
-    if (centerId && centersData?.data) {
-      return centersData.data.find((c) => c.center_id === centerId) || null
+    if (centerId && centersDataForWilaya?.data) {
+      return centersDataForWilaya.data.find((c) => c.center_id === centerId) || null
     }
     return null
-  }, [centerId, centersData])
+  }, [centerId, centersDataForWilaya])
 
   if (!order) return null
 
@@ -656,8 +720,8 @@ export function ConfirmOrderDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 mt-4">
-          {/* Main sections in flex layout */}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4">
           <div className="flex gap-6">
             {/* Left column: Shipping & Customer Details */}
             <div className="flex-1 min-w-0 space-y-6">
@@ -673,38 +737,50 @@ export function ConfirmOrderDialog({
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Shipping</h3>
                     <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="shipping_provider">
+                        <FormField
+                          control={form.control}
+                          name="shipping_provider"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
                         Shipping Provider <span className="text-red-500">*</span>
-                      </Label>
+                              </FormLabel>
                       <Select
-                        value={shippingProvider}
-                        onValueChange={(value) => setShippingProvider(value as 'yalidine' | 'my_delivery')}
+                                value={field.value}
+                                onValueChange={field.onChange}
                       >
-                        <SelectTrigger className="w-full">
+                                <FormControl>
+                                  <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
+                                </FormControl>
                         <SelectContent>
                           <SelectItem value="yalidine">Yalidine</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div>
-                      <Label>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="delivery_type"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
                         Delivery Type <span className="text-red-500">*</span>
-                      </Label>
+                              </FormLabel>
                       <div className="flex gap-4 mt-2">
                         <div className="flex items-center space-x-2">
                           <input
                             type="radio"
                             id="delivery_type_home"
-                            name="delivery_type"
-                            value="home"
-                            checked={deliveryType === 'home'}
-                            onChange={(e) => {
-                              setDeliveryType(e.target.value as 'home' | 'stop_desk')
-                              setCommuneId(undefined)
-                              setCenterId(undefined)
+                                    checked={field.value === 'home'}
+                                    onChange={() => {
+                                      field.onChange('home')
+                                      form.setValue('commune_id', undefined)
+                                      form.setValue('center_id', undefined)
                             }}
                             className="h-4 w-4 text-primary focus:ring-primary"
                           />
@@ -716,13 +792,11 @@ export function ConfirmOrderDialog({
                           <input
                             type="radio"
                             id="delivery_type_stop_desk"
-                            name="delivery_type"
-                            value="stop_desk"
-                            checked={deliveryType === 'stop_desk'}
-                            onChange={(e) => {
-                              setDeliveryType(e.target.value as 'home' | 'stop_desk')
-                              setCommuneId(undefined)
-                              setCenterId(undefined)
+                                    checked={field.value === 'stop_desk'}
+                                    onChange={() => {
+                                      field.onChange('stop_desk')
+                                      form.setValue('commune_id', undefined)
+                                      form.setValue('center_id', undefined)
                             }}
                             className="h-4 w-4 text-primary focus:ring-primary"
                           />
@@ -731,24 +805,34 @@ export function ConfirmOrderDialog({
                           </Label>
                         </div>
                       </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="from_wilaya">
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="from_wilaya_id"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
                         Origin Wilaya (From) <span className="text-red-500">*</span>
-                      </Label>
+                              </FormLabel>
                       <Select
-                        value={fromWilayaId?.toString() || ''}
+                                value={field.value?.toString() || ''}
                         onValueChange={(value) => {
                           const wilayaId = parseInt(value, 10)
                           if (!isNaN(wilayaId)) {
-                            setFromWilayaId(wilayaId)
-                            defaultFromWilayaIdSetRef.current = true // Mark as manually set
+                                    field.onChange(wilayaId)
+                                    defaultFromWilayaIdSetRef.current = true
                           }
                         }}
                       >
-                        <SelectTrigger className="w-full">
+                                <FormControl>
+                                  <SelectTrigger>
                           <SelectValue placeholder="Select origin wilaya" />
                         </SelectTrigger>
+                                </FormControl>
                         <SelectContent>
                           {wilayas.map((wilaya) => (
                             <SelectItem key={wilaya.id} value={wilaya.id.toString()}>
@@ -757,25 +841,36 @@ export function ConfirmOrderDialog({
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="shipping_wilaya">
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="shipping_wilaya_id"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
                         State (Wilaya) <span className="text-red-500">*</span>
-                      </Label>
+                              </FormLabel>
                       <Select
-                        value={shippingWilayaId?.toString() || ''}
+                                value={field.value?.toString() || ''}
                         onValueChange={(value) => {
                           const wilayaId = parseInt(value)
                           const wilaya = wilayas.find((w) => w.id === wilayaId)
-                          setShippingWilayaId(wilayaId)
-                          const wilayaName = wilaya?.name || ''
-                          setShippingWilayaName(wilayaName)
-                          setCustomerState(wilayaName)
-                        }}
-                      >
-                        <SelectTrigger className="w-full">
+                                  field.onChange(wilayaId)
+                                  if (wilaya) {
+                                    form.setValue('shipping_wilaya_name', wilaya.name)
+                                    form.setValue('customer_state', wilaya.name)
+                                  }
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
                           <SelectValue placeholder="Select wilaya" />
                         </SelectTrigger>
+                                </FormControl>
                         <SelectContent>
                           {wilayas.map((wilaya) => (
                             <SelectItem key={wilaya.id} value={wilaya.id.toString()}>
@@ -784,20 +879,30 @@ export function ConfirmOrderDialog({
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
                     {deliveryType === 'home' ? (
-                      <div>
-                        <Label htmlFor="commune">
+                          <FormField
+                            control={form.control}
+                            name="commune_id"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>
                           Commune <span className="text-red-500">*</span>
-                        </Label>
+                                </FormLabel>
                         <Select
-                          value={communeId?.toString() || ''}
-                          onValueChange={(value) => setCommuneId(parseInt(value))}
+                                  value={field.value?.toString() || ''}
+                                  onValueChange={(value) => field.onChange(parseInt(value))}
                           disabled={!shippingWilayaId}
                         >
-                          <SelectTrigger className="w-full">
+                                  <FormControl>
+                                    <SelectTrigger>
                             <SelectValue placeholder={shippingWilayaId ? "Select commune" : "Select wilaya first"} />
                           </SelectTrigger>
+                                  </FormControl>
                           <SelectContent>
                             {communes.map((commune) => (
                               <SelectItem key={commune.id} value={commune.id.toString()}>
@@ -806,20 +911,29 @@ export function ConfirmOrderDialog({
                             ))}
                           </SelectContent>
                         </Select>
-                      </div>
-                    ) : (
-                      <div>
-                        <Label htmlFor="center">
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        ) : (
+                          <FormField
+                            control={form.control}
+                            name="center_id"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>
                           Stop Desk <span className="text-red-500">*</span>
-                        </Label>
+                                </FormLabel>
                         <Select
-                          value={centerId?.toString() || ''}
-                          onValueChange={(value) => setCenterId(parseInt(value))}
+                                  value={field.value?.toString() || ''}
+                                  onValueChange={(value) => field.onChange(parseInt(value))}
                           disabled={!shippingWilayaId}
                         >
-                          <SelectTrigger className="w-full">
+                                  <FormControl>
+                                    <SelectTrigger>
                             <SelectValue placeholder={shippingWilayaId ? "Select center" : "Select wilaya first"} />
                           </SelectTrigger>
+                                  </FormControl>
                           <SelectContent>
                             {centers.map((center) => (
                               <SelectItem key={center.center_id} value={center.center_id.toString()}>
@@ -828,7 +942,10 @@ export function ConfirmOrderDialog({
                             ))}
                           </SelectContent>
                         </Select>
-                      </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                     )}
                   </div>
 
@@ -847,7 +964,7 @@ export function ConfirmOrderDialog({
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-500">Current Fee:</span>
-                              <span className="font-medium">{secondDeliveryCost.toFixed(2)} DZD</span>
+                                  <span className="font-medium">{form.watch('second_delivery_cost').toFixed(2)} DZD</span>
                             </div>
                           </>
                         ) : (
@@ -862,67 +979,93 @@ export function ConfirmOrderDialog({
                   <div className="pt-4 border-t">
                     <h3 className="text-lg font-semibold mb-4">Customer Details</h3>
                     <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="customer_full_name">
+                        <FormField
+                          control={form.control}
+                          name="customer_full_name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
                         Full Name <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="customer_full_name"
-                        value={customerFullName}
-                        onChange={(e) => setCustomerFullName(e.target.value)}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="customer_phone">
+                              </FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="customer_phone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
                         Phone Number <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="customer_phone"
-                        value={customerPhone}
-                        onChange={(e) => setCustomerPhone(e.target.value)}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="customer_phone2">Phone Number 2</Label>
-                      <Input
-                        id="customer_phone2"
-                        value={customerPhone2}
-                        onChange={(e) => setCustomerPhone2(e.target.value)}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="customer_address">
+                              </FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="customer_phone2"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Phone Number 2</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="customer_address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
                         Address <span className="text-red-500">*</span>
-                      </Label>
-                      <Textarea
-                        id="customer_address"
-                        rows={2}
-                        value={customerAddress}
-                        onChange={(e) => setCustomerAddress(e.target.value)}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="customer_state">
+                              </FormLabel>
+                              <FormControl>
+                                <Textarea rows={2} {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="customer_state"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
                         State <span className="text-red-500">*</span>
-                      </Label>
+                              </FormLabel>
                       <Select
                         value={shippingWilayaId?.toString() || ''}
                         onValueChange={(value) => {
                           const wilayaId = parseInt(value)
                           const wilaya = wilayas.find((w) => w.id === wilayaId)
-                          setShippingWilayaId(wilayaId)
-                          const wilayaName = wilaya?.name || ''
-                          setShippingWilayaName(wilayaName)
-                          setCustomerState(wilayaName)
-                        }}
-                      >
-                        <SelectTrigger className="w-full mt-2">
+                                  form.setValue('shipping_wilaya_id', wilayaId)
+                                  if (wilaya) {
+                                    form.setValue('shipping_wilaya_name', wilaya.name)
+                                    field.onChange(wilaya.name)
+                                  }
+                                }}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
                           <SelectValue placeholder="Select a wilaya" />
                         </SelectTrigger>
+                                </FormControl>
                         <SelectContent>
                           {wilayas.map((wilaya) => (
                             <SelectItem key={wilaya.id} value={wilaya.id.toString()}>
@@ -931,17 +1074,24 @@ export function ConfirmOrderDialog({
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="customer_comments">Client Comments</Label>
-                      <Textarea
-                        id="customer_comments"
-                        rows={2}
-                        value={customerComments}
-                        onChange={(e) => setCustomerComments(e.target.value)}
-                        className="mt-2"
-                      />
-                    </div>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="customer_comments"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Client Comments</FormLabel>
+                              <FormControl>
+                                <Textarea rows={2} {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                   </div>
                   </div>
                 </CardContent>
@@ -969,97 +1119,92 @@ export function ConfirmOrderDialog({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {items
-                        .filter((item) => {
-                          // Include all existing items (both snapshot and non-snapshot) and new items
-                          // Snapshot items can now be edited and confirmed
-                          if (item.id < 0) return true // New items
-                          const orderItem = order.items.find((i) => i.id === item.id)
-                          return !!orderItem // All existing items (snapshot or not)
-                        })
-                        .map((item) => {
-                          const orderItem = order.items.find((i) => i.id === item.id) || null
+                        {fields
+                          .map((field, actualIndex) => {
+                            const item = field as any
+                            
+                            // Find order item by product_variant_id
+                            const orderItem = item.product_variant_id
+                              ? order.items.find((oi) => oi.product_variant_id === item.product_variant_id) || null
+                              : null
+                            
+                            // Filter: only show items that have a product_variant_id (existing or new)
+                            // New items (added via "Add Item") won't have product_variant_id initially, so show them
+                            // Existing items must have product_variant_id to match an order item
+                            if (!item.product_variant_id && !orderItem) {
+                              // This is a new item without variant selected yet - show it
+                              // Or it's an invalid state - show it anyway so user can fix it
+                            }
+                            
+                            // Get numeric ID from order item if found
+                            const numericId = orderItem?.id
 
-                          // Find the selected variant - check stored selection first, then orderItem
-                          const storedVariantId = selectedVariants.get(item.id)
-                          const variantIdToUse = storedVariantId ?? orderItem?.product_variant_id
+                            // Priority: form data (item.product_variant_id) > selectedVariants Map > orderItem
+                            const storedVariantId = numericId ? selectedVariants.get(numericId) : undefined
+                            const variantIdToUse = item.product_variant_id ?? storedVariantId ?? orderItem?.product_variant_id
                           const selectedVariant = variantIdToUse
                             ? allVariants.find((v) => v.id === variantIdToUse)
                             : null
 
-                          // Get the actual index in the original items array
-                          const actualIndex = items.findIndex((i) => i.id === item.id)
-
                           return (
                             <OrderItemTableRow
-                              key={item.id}
+                                key={field.id}
                               index={actualIndex}
                               item={item}
                               orderItem={orderItem}
                               selectedVariant={selectedVariant}
                               allVariants={allVariants}
                               onUpdateQuantity={(value) => {
-                                setItems((prevItems) => {
-                                  const newItems = [...prevItems]
-                                  const itemIndex = newItems.findIndex((i) => i.id === item.id)
-                                  if (itemIndex !== -1) {
-                                    newItems[itemIndex] = {
-                                      ...newItems[itemIndex],
-                                      confirmed_quantity: value,
-                                    }
-                                  }
-                                  return newItems
-                                })
+                                  update(actualIndex, { ...item, confirmed_quantity: value })
                               }}
                               onUpdatePrice={(value) => {
-                                setItems((prevItems) => {
-                                  const newItems = [...prevItems]
-                                  const itemIndex = newItems.findIndex((i) => i.id === item.id)
-                                  if (itemIndex !== -1) {
-                                    newItems[itemIndex] = {
-                                      ...newItems[itemIndex],
-                                      confirmed_price: value,
-                                    }
-                                  }
-                                  return newItems
-                                })
+                                  update(actualIndex, { ...item, confirmed_price: value })
                               }}
                               onSelectVariant={(variant) => {
-                                // Store the selected variant ID
+                                  // Find order item by the newly selected variant
+                                  const matchingOrderItem = order.items.find(
+                                    (oi) => oi.product_variant_id === variant.id
+                                  )
+                                  
+                                  // Update selectedVariants map if we found a matching order item
+                                  if (matchingOrderItem) {
                                 setSelectedVariants((prev) => {
                                   const next = new Map(prev)
-                                  next.set(item.id, variant.id)
+                                      next.set(matchingOrderItem.id, variant.id)
                                   return next
                                 })
-                                // Update the price when variant is selected
-                                // Use product's base_retail_price as default, or fallback to orderItem price or 0
+                                  }
+                                  
                                 const variantPrice = variant.product?.base_retail_price ?? orderItem?.price ?? 0
-                                setItems((prevItems) => {
-                                  const newItems = [...prevItems]
-                                  const itemIndex = newItems.findIndex((i) => i.id === item.id)
-                                  if (itemIndex !== -1) {
-                                    newItems[itemIndex] = {
-                                      ...newItems[itemIndex],
+                                  const updatedItem = {
+                                    ...item,
                                       product_variant_id: variant.id,
                                       confirmed_price: variantPrice,
                                     }
-                                  }
-                                  return newItems
-                                })
+                                  
+                                  update(actualIndex, updatedItem)
                               }}
                               onRemove={() => {
-                                // Remove the item from the list
-                                setItems((prevItems) => prevItems.filter((i) => i.id !== item.id))
-                                // Remove from selected variants if it exists
+                                  // Find order item by product_variant_id before removing
+                                  const matchingOrderItem = item.product_variant_id
+                                    ? order.items.find((oi) => oi.product_variant_id === item.product_variant_id)
+                                    : null
+                                  
+                                  remove(actualIndex)
+                                  
+                                  // Remove from selectedVariants if it was an existing order item
+                                  if (matchingOrderItem) {
                                 setSelectedVariants((prev) => {
                                   const next = new Map(prev)
-                                  next.delete(item.id)
+                                      next.delete(matchingOrderItem.id)
                                   return next
                                 })
+                                  }
                               }}
                             />
                           )
-                        })}
+                          })
+                          .filter(Boolean)}
                     </TableBody>
                     <TableFooter>
                       <TableRow>
@@ -1067,7 +1212,22 @@ export function ConfirmOrderDialog({
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={addNewItem}
+                            onClick={(e) => {
+                              console.log('=== BUTTON CLICK DEBUG ===')
+                              console.log('Button clicked!')
+                              console.log('Event:', e)
+                              console.log('Event type:', e.type)
+                              console.log('Event target:', e.target)
+                              console.log('Event currentTarget:', e.currentTarget)
+                              
+                              e.preventDefault()
+                              e.stopPropagation()
+                              
+                              console.log('Calling addNewItem...')
+                              addNewItem()
+                              console.log('addNewItem call completed')
+                              console.log('=== END BUTTON CLICK DEBUG ===')
+                            }}
                             className="w-full"
                           >
                             <Plus className="mr-2 h-4 w-4" />
@@ -1089,13 +1249,15 @@ export function ConfirmOrderDialog({
                   <div className="flex justify-between">
                     <span>Product Total:</span>
                     <span className="font-medium">
-                      {items
+                        {form.watch('items')
                         .reduce((sum, item) => {
-                          const hasSelectedVariant = selectedVariants.has(item.id)
-                          if (!hasSelectedVariant) {
+                          // Only include items that have a product_variant_id (selected variant)
+                          if (!item.product_variant_id) {
                             return sum
                           }
-                          const orderItem = order?.items.find((i) => i.id === item.id) || null
+                          
+                          // Find order item by product_variant_id
+                          const orderItem = order?.items.find((oi) => oi.product_variant_id === item.product_variant_id) || null
                           const price = getItemPrice(item, orderItem)
                           return sum + (item.confirmed_quantity ?? 0) * price
                         }, 0)
@@ -1103,39 +1265,55 @@ export function ConfirmOrderDialog({
                       DZD
                     </span>
                   </div>
-                  <div>
-                    <Label htmlFor="delivery_cost">
+                    <FormField
+                      control={form.control}
+                      name="second_delivery_cost"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
                       Delivery Cost <span className="text-red-500">*</span>
                       {loadingDeliveryFee && (
                         <span className="ml-2 text-xs text-gray-500">(Loading...)</span>
                       )}
-                    </Label>
+                          </FormLabel>
+                          <FormControl>
                     <Input
-                      id="delivery_cost"
                       type="number"
                       step="0.01"
                       min="0"
-                      value={secondDeliveryCost}
-                      onChange={(e) => setSecondDeliveryCost(parseFloat(e.target.value) || 0)}
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                       disabled={loadingDeliveryFee}
                     />
+                          </FormControl>
                     {firstDeliveryCost > 0 && (
                       <p className="text-xs text-gray-500 mt-1">
                         Suggested fee: {firstDeliveryCost.toFixed(2)} DZD
                       </p>
                     )}
-                  </div>
-                  <div>
-                    <Label htmlFor="discount">Discount</Label>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="discount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Discount</FormLabel>
+                          <FormControl>
                     <Input
-                      id="discount"
                       type="number"
                       step="0.01"
                       min="0"
-                      value={discount}
-                      onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
                   <div className="flex justify-between border-t pt-2 font-bold text-lg">
                     <span>Total:</span>
                     <span>{calculateTotal.toFixed(2)} DZD</span>
@@ -1147,17 +1325,42 @@ export function ConfirmOrderDialog({
 
           {/* Actions */}
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? 'Confirming...' : 'Confirm Order'}
+              <Button 
+                type="submit" 
+                disabled={form.formState.isSubmitting}
+                onClick={(e) => {
+                  console.log('=== SUBMIT BUTTON CLICK DEBUG ===')
+                  console.log('Submit button clicked!')
+                  console.log('Event:', e)
+                  console.log('Form state:', {
+                    isSubmitting: form.formState.isSubmitting,
+                    isValid: form.formState.isValid,
+                    errors: form.formState.errors,
+                    isDirty: form.formState.isDirty,
+                  })
+                  console.log('Form errors (expanded):', JSON.stringify(form.formState.errors, null, 2))
+                  console.log('Form values:', form.getValues())
+                  console.log('Form values (expanded):', JSON.stringify(form.getValues(), null, 2))
+                  
+                  // Try to trigger validation manually
+                  form.trigger().then((isValid) => {
+                    console.log('Manual validation trigger result:', isValid)
+                    console.log('Errors after trigger:', JSON.stringify(form.formState.errors, null, 2))
+                  })
+                  
+                  console.log('=== END SUBMIT BUTTON CLICK DEBUG ===')
+                  // Don't prevent default - let form handle submission
+                }}
+              >
+                {form.formState.isSubmitting ? 'Confirming...' : 'Confirm Order'}
             </Button>
           </div>
-        </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   )
 }
-
-
