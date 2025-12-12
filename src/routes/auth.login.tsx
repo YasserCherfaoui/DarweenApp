@@ -3,7 +3,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useRecaptcha } from '@/hooks/use-recaptcha'
-import { loginWithGoogle } from '@/lib/auth'
 import { executeRecaptcha } from '@/lib/recaptcha'
 import { rootRoute } from '@/main'
 import { useForm } from '@tanstack/react-form'
@@ -297,6 +296,7 @@ function LoginPage() {
                 }, 10000)
                 
                 try {
+                  const { loginWithGoogle } = await import('@/lib/auth')
                   await loginWithGoogle()
                   // If loginWithGoogle succeeds, it redirects to Google OAuth page
                   // so we don't need to reset the loading state here

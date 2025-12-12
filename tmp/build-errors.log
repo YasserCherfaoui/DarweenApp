@@ -1,1 +1,38 @@
-exit status 1
+
+> build
+> vite build && tsc
+
+vite v7.2.1 building client environment for production...
+transforming...
+✓ 3172 modules transformed.
+node_modules/@module-federation/sdk/dist/index.cjs.cjs (651:77): Use of eval in "node_modules/@module-federation/sdk/dist/index.cjs.cjs" is strongly discouraged as it poses security risks and may cause issues with minification.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /Users/mac/Projects/darween-full/darween-frontoffice/src/lib/auth.ts is dynamically imported by /Users/mac/Projects/darween-full/darween-frontoffice/src/routes/auth.login.tsx, /Users/mac/Projects/darween-full/darween-frontoffice/src/routes/auth.login.tsx, /Users/mac/Projects/darween-full/darween-frontoffice/src/routes/auth.register.tsx but also statically imported by /Users/mac/Projects/darween-full/darween-frontoffice/src/hooks/use-auth.ts, /Users/mac/Projects/darween-full/darween-frontoffice/src/routes/auth.company-setup.tsx, /Users/mac/Projects/darween-full/darween-frontoffice/src/routes/auth.login.tsx, dynamic import will not move module into another chunk.
+
+[plugin vite:reporter] 
+(!) /Users/mac/Projects/darween-full/darween-frontoffice/src/lib/google-oauth.ts is dynamically imported by /Users/mac/Projects/darween-full/darween-frontoffice/src/lib/auth.ts but also statically imported by /Users/mac/Projects/darween-full/darween-frontoffice/src/routes/auth.google-callback.tsx, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/index.html                                                 2.22 kB │ gzip:   1.02 kB
+dist/assets/index-BpnRZT8f.css                                 97.44 kB │ gzip:  16.05 kB
+dist/assets/_commonjsHelpers-Cpj98o6Y.js                        0.24 kB │ gzip:   0.18 kB
+dist/assets/demo-mf-component-DwT-x6wL.js                       0.39 kB │ gzip:   0.29 kB
+dist/assets/hostInit-CFxFEDfo.js                                0.42 kB │ gzip:   0.27 kB
+dist/assets/demo-mf-self-contained-DBkIP8PF.js                  0.51 kB │ gzip:   0.36 kB
+dist/assets/compiler-runtime-BBr2W09X.js                        0.63 kB │ gzip:   0.42 kB
+dist/assets/app__loadShare__react__loadShare__-OSypMJZb.js      0.73 kB │ gzip:   0.50 kB
+dist/assets/virtualExposes-DHw_mV5l.js                          0.90 kB │ gzip:   0.46 kB
+dist/assets/preload-helper-BXl3LOEh.js                          1.11 kB │ gzip:   0.65 kB
+dist/remoteEntry.js                                             1.83 kB │ gzip:   0.85 kB
+dist/assets/index-CKoVwgFc.js                                   4.03 kB │ gzip:   1.59 kB
+dist/assets/index-D7cZFH3d.js                                   7.96 kB │ gzip:   3.09 kB
+dist/assets/app__mf_v__runtimeInit__mf_v__-94t3KEJl.js         72.01 kB │ gzip:  20.11 kB
+dist/assets/client-DhG5Job6.js                                180.62 kB │ gzip:  56.83 kB
+dist/assets/index-DmQ6Bk2q.js                               2,199.79 kB │ gzip: 590.82 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 12.82s
