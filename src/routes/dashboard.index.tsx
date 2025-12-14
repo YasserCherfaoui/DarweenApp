@@ -1,9 +1,11 @@
 import { createRoute, redirect } from '@tanstack/react-router'
 import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Building2, Package, Store, Warehouse } from 'lucide-react'
+import { Building2, Package, Store, Warehouse, ShoppingCart } from 'lucide-react'
 import { rootRoute } from '@/main'
 import { portalStore } from '@/stores/portal-store'
+import { companyStore } from '@/stores/company-store'
+import { useDashboardAnalytics } from '@/hooks/queries/use-dashboard'
 
 export const DashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -22,30 +24,37 @@ export const DashboardRoute = createRoute({
 })
 
 function DashboardPage() {
+  const companyId = companyStore.state.selectedCompanyId
+  const { data: analytics, isLoading } = useDashboardAnalytics(companyId || 0)
+
   const stats = [
     {
-      title: 'Companies',
-      value: '0',
-      description: 'Active companies',
-      icon: Building2,
-    },
-    {
       title: 'Products',
-      value: '0',
+      value: analytics?.total_products?.toString() || '0',
       description: 'Total products',
       icon: Package,
+      isLoading,
     },
     {
       title: 'Franchises',
-      value: '0',
+      value: analytics?.total_franchises?.toString() || '0',
       description: 'Active franchises',
       icon: Store,
+      isLoading,
     },
     {
       title: 'Inventory Items',
-      value: '0',
+      value: analytics?.total_inventory_items?.toString() || '0',
       description: 'In stock',
       icon: Warehouse,
+      isLoading,
+    },
+    {
+      title: 'Orders',
+      value: analytics?.total_orders?.toString() || '0',
+      description: 'Total orders',
+      icon: ShoppingCart,
+      isLoading,
     },
   ]
 
@@ -73,7 +82,13 @@ function DashboardPage() {
                   <Icon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="text-2xl font-bold">
+                    {stat.isLoading ? (
+                      <span className="text-gray-400">...</span>
+                    ) : (
+                      stat.value
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {stat.description}
                   </p>

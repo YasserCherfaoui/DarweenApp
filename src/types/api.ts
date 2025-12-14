@@ -450,6 +450,13 @@ export interface Company {
   user_role?: UserRole // Current user's role in this company
 }
 
+export interface DashboardAnalytics {
+  total_products: number
+  total_franchises: number
+  total_inventory_items: number
+  total_orders: number
+}
+
 export interface CreateCompanyRequest {
   name: string
   code: string

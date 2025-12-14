@@ -43,6 +43,7 @@ import type {
     CreateWooCommerceWebhookConfigRequest,
     CreateYalidineConfigRequest,
     Customer,
+    DashboardAnalytics,
     Franchise,
     FranchisePricing,
     Inventory,
@@ -406,6 +407,12 @@ class ApiClient {
           method: 'POST',
         }
       )
+    },
+
+    getDashboardAnalytics: async (
+      id: number
+    ): Promise<ApiResponse<DashboardAnalytics>> => {
+      return this.request(`/companies/${id}/dashboard`)
     },
   }
 
