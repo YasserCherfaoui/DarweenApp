@@ -10,26 +10,55 @@
   <meta name="description" content="Darween ERP Platform - Modern enterprise resource planning solution" />
   <meta name="facebook-domain-verification" content="ph5cwtz6vkg1udpgy4mlfz74sqw0ym" />
   <script>
-    try {
-      !function (f, b, e, v, n, t, s) {
-        if (f.fbq) return; n = f.fbq = function () {
-          n.callMethod ?
-          n.callMethod.apply(n, arguments) : n.queue.push(arguments)
+    (function() {
+      try {
+        // Initialize fbq function even if script is blocked
+        if (!window.fbq) {
+          window.fbq = function() {
+            if (window.fbq.callMethod) {
+              window.fbq.callMethod.apply(window.fbq, arguments);
+            } else {
+              (window.fbq.q = window.fbq.q || []).push(arguments);
+            }
+          };
+          window.fbq.loaded = true;
+          window.fbq.version = '2.0';
+          window.fbq.queue = [];
+        }
+
+        // Try to load the Facebook Pixel script
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://connect.facebook.net/en_US/fbevents.js';
+        
+        // Handle script load errors silently
+        script.onerror = function() {
+          // Script blocked by ad blocker - this is expected and fine
+          // Initialize fbq as a no-op if script fails to load
+          if (!window.fbq.loaded) {
+            window.fbq = function() {};
+            window.fbq.loaded = false;
+          }
         };
-        if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0';
-        n.queue = []; t = b.createElement(e); t.async = !0;
-        t.src = v; s = b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t, s)
-      }(window, document, 'script',
-        'https://connect.facebook.net/en_US/fbevents.js');
-      if (typeof fbq !== 'undefined') {
-        fbq('init', '1345744590621367');
-        fbq('track', 'PageView');
+        
+        script.onload = function() {
+          // Only initialize if script loaded successfully
+          if (typeof window.fbq !== 'undefined' && window.fbq.loaded) {
+            try {
+              window.fbq('init', '1345744590621367');
+              window.fbq('track', 'PageView');
+            } catch (e) {
+              // Silently handle initialization errors
+            }
+          }
+        };
+        
+        var firstScript = document.getElementsByTagName('script')[0];
+        firstScript.parentNode.insertBefore(script, firstScript);
+      } catch (e) {
+        // Silently handle any errors - Facebook Pixel is optional
       }
-    } catch (e) {
-      // Facebook Pixel blocked by ad blocker or failed to load
-      console.debug('Facebook Pixel not available:', e);
-    }
+    })();
   </script>
   <link rel="apple-touch-icon" href="/PNG/Darween.png" />
   <link rel="manifest" href="/manifest.json" />

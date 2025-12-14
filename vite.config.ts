@@ -48,6 +48,15 @@ export default defineConfig(({ mode }) => {
         '@radix-ui/react-switch',
         '@radix-ui/react-tabs',
         '@radix-ui/react-tooltip',
+        'clsx',
+        'tailwind-merge',
+        'class-variance-authority',
+        'lucide-react',
+        'cmdk',
+        'sonner',
+        'zod',
+        'react-hook-form',
+        '@hookform/resolvers',
       ],
     },
     build: {
@@ -73,12 +82,34 @@ export default defineConfig(({ mode }) => {
               if (id.includes('@radix-ui')) {
                 return 'radix-ui'
               }
+              // Form libraries - group together to avoid circular deps
+              if (id.includes('react-hook-form') || id.includes('@hookform')) {
+                return 'form-libs'
+              }
+              // Utility libraries - group common utilities
+              if (
+                id.includes('clsx') ||
+                id.includes('tailwind-merge') ||
+                id.includes('class-variance-authority') ||
+                id.includes('lucide-react')
+              ) {
+                return 'utils'
+              }
               // Other large vendor libraries
               if (id.includes('recharts')) {
                 return 'recharts'
               }
               if (id.includes('@tiptap')) {
                 return 'tiptap'
+              }
+              if (id.includes('cmdk')) {
+                return 'cmdk'
+              }
+              if (id.includes('sonner')) {
+                return 'sonner'
+              }
+              if (id.includes('zod')) {
+                return 'zod'
               }
               // Module federation
               if (id.includes('@module-federation')) {
@@ -94,8 +125,14 @@ export default defineConfig(({ mode }) => {
           if (warning.code === 'EVAL' && warning.id?.includes('@module-federation')) {
             return
           }
-          // Suppress circular dependency warnings for Radix UI
-          if (warning.code === 'CIRCULAR_DEPENDENCY' && warning.id?.includes('@radix-ui')) {
+          // Suppress circular dependency warnings for known packages
+          if (
+            warning.code === 'CIRCULAR_DEPENDENCY' &&
+            (warning.id?.includes('@radix-ui') ||
+              warning.id?.includes('react-hook-form') ||
+              warning.id?.includes('clsx') ||
+              warning.id?.includes('tailwind-merge'))
+          ) {
             return
           }
           warn(warning)
