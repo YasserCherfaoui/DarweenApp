@@ -28,7 +28,7 @@ export const DashboardRoute = createRoute({
 })
 
 function DashboardPage() {
-  const { selectedCompany, selectedCompanyId } = useStore(companyStore)
+  const { selectedCompanyId } = useStore(companyStore)
   const { selectedPortal, selectedPortalId } = useStore(portalStore)
   const companyId = selectedPortalId && selectedPortal?.type === 'company' 
     ? selectedPortalId 
@@ -37,11 +37,6 @@ function DashboardPage() {
 
   // Check if we have a company context (either through portal or direct selection)
   const hasCompanyContext = !!companyId
-  const activeCompany = selectedPortal?.type === 'company' 
-    ? { name: selectedPortal.name, code: selectedPortal.code }
-    : selectedCompany
-      ? { name: selectedCompany.name, code: selectedCompany.code }
-      : null
 
   const stats = [
     {
