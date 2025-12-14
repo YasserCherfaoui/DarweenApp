@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite'
-import viteReact from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import viteReact from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
 
 import { federation } from '@module-federation/vite'
 import { fileURLToPath, URL } from 'node:url'
@@ -32,113 +32,6 @@ export default defineConfig(({ mode }) => {
     },
     optimizeDeps: {
       exclude: ['@module-federation/vite'],
-      include: [
-        '@radix-ui/react-alert-dialog',
-        '@radix-ui/react-avatar',
-        '@radix-ui/react-checkbox',
-        '@radix-ui/react-dialog',
-        '@radix-ui/react-dropdown-menu',
-        '@radix-ui/react-icons',
-        '@radix-ui/react-label',
-        '@radix-ui/react-popover',
-        '@radix-ui/react-select',
-        '@radix-ui/react-separator',
-        '@radix-ui/react-slider',
-        '@radix-ui/react-slot',
-        '@radix-ui/react-switch',
-        '@radix-ui/react-tabs',
-        '@radix-ui/react-tooltip',
-        'clsx',
-        'tailwind-merge',
-        'class-variance-authority',
-        'lucide-react',
-        'cmdk',
-        'sonner',
-        'zod',
-        'react-hook-form',
-        '@hookform/resolvers',
-      ],
-    },
-    build: {
-      commonjsOptions: {
-        include: [/node_modules/],
-        transformMixedEsModules: true,
-      },
-      rollupOptions: {
-        output: {
-          manualChunks: (id) => {
-            // Split node_modules into separate chunks
-            if (id.includes('node_modules')) {
-              // React and React DOM - must be first to avoid initialization issues
-              if (id.includes('react') || id.includes('react-dom')) {
-                return 'react-vendor'
-              }
-              // TanStack libraries
-              if (id.includes('@tanstack')) {
-                return 'tanstack'
-              }
-              // Radix UI components - keep together but after React
-              // Group all Radix UI packages together to avoid circular dependency issues
-              if (id.includes('@radix-ui')) {
-                return 'radix-ui'
-              }
-              // Form libraries - group together to avoid circular deps
-              if (id.includes('react-hook-form') || id.includes('@hookform')) {
-                return 'form-libs'
-              }
-              // Utility libraries - group common utilities
-              if (
-                id.includes('clsx') ||
-                id.includes('tailwind-merge') ||
-                id.includes('class-variance-authority') ||
-                id.includes('lucide-react')
-              ) {
-                return 'utils'
-              }
-              // Other large vendor libraries
-              if (id.includes('recharts')) {
-                return 'recharts'
-              }
-              if (id.includes('@tiptap')) {
-                return 'tiptap'
-              }
-              if (id.includes('cmdk')) {
-                return 'cmdk'
-              }
-              if (id.includes('sonner')) {
-                return 'sonner'
-              }
-              if (id.includes('zod')) {
-                return 'zod'
-              }
-              // Module federation
-              if (id.includes('@module-federation')) {
-                return 'module-federation'
-              }
-              // All other node_modules
-              return 'vendor'
-            }
-          },
-        },
-        onwarn(warning, warn) {
-          // Suppress eval warnings from module-federation
-          if (warning.code === 'EVAL' && warning.id?.includes('@module-federation')) {
-            return
-          }
-          // Suppress circular dependency warnings for known packages
-          if (
-            warning.code === 'CIRCULAR_DEPENDENCY' &&
-            (warning.id?.includes('@radix-ui') ||
-              warning.id?.includes('react-hook-form') ||
-              warning.id?.includes('clsx') ||
-              warning.id?.includes('tailwind-merge'))
-          ) {
-            return
-          }
-          warn(warning)
-        },
-      },
-      chunkSizeWarningLimit: 1000,
     },
   }
 })

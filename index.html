@@ -11,6 +11,7 @@
   <meta name="facebook-domain-verification" content="ph5cwtz6vkg1udpgy4mlfz74sqw0ym" />
   <script>
     (function() {
+      'use strict';
       try {
         // Initialize fbq function even if script is blocked
         if (!window.fbq) {
@@ -21,7 +22,7 @@
               (window.fbq.q = window.fbq.q || []).push(arguments);
             }
           };
-          window.fbq.loaded = true;
+          window.fbq.loaded = false;
           window.fbq.version = '2.0';
           window.fbq.queue = [];
         }
@@ -29,22 +30,22 @@
         // Try to load the Facebook Pixel script
         var script = document.createElement('script');
         script.async = true;
+        script.crossOrigin = 'anonymous';
         script.src = 'https://connect.facebook.net/en_US/fbevents.js';
         
-        // Handle script load errors silently
+        // Handle script load errors silently - don't show in console
         script.onerror = function() {
           // Script blocked by ad blocker - this is expected and fine
           // Initialize fbq as a no-op if script fails to load
-          if (!window.fbq.loaded) {
-            window.fbq = function() {};
-            window.fbq.loaded = false;
-          }
+          window.fbq = function() {};
+          window.fbq.loaded = false;
         };
         
         script.onload = function() {
           // Only initialize if script loaded successfully
-          if (typeof window.fbq !== 'undefined' && window.fbq.loaded) {
+          if (window.fbq && typeof window.fbq === 'function') {
             try {
+              window.fbq.loaded = true;
               window.fbq('init', '1345744590621367');
               window.fbq('track', 'PageView');
             } catch (e) {
@@ -54,9 +55,17 @@
         };
         
         var firstScript = document.getElementsByTagName('script')[0];
-        firstScript.parentNode.insertBefore(script, firstScript);
+        if (firstScript && firstScript.parentNode) {
+          firstScript.parentNode.insertBefore(script, firstScript);
+        } else {
+          document.head.appendChild(script);
+        }
       } catch (e) {
         // Silently handle any errors - Facebook Pixel is optional
+        // Initialize a no-op function to prevent errors
+        if (!window.fbq) {
+          window.fbq = function() {};
+        }
       }
     })();
   </script>
