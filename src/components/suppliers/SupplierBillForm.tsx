@@ -1,7 +1,6 @@
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { ProductSearch } from '@/components/pos/ProductSearch'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Form,
   FormControl,
@@ -12,22 +11,32 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ProductSearch } from '@/components/pos/ProductSearch'
 import type {
-  ProductVariant,
-  Product,
-  SupplierBillItemRequest,
+  BillStatus,
   CreateSupplierBillRequest,
-  UpdateSupplierBillRequest,
+  Product,
+  ProductVariant,
   SupplierBillItem,
+  SupplierBillItemRequest,
+  UpdateSupplierBillRequest,
 } from '@/types/api'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 const billFormSchema = z.object({
   notes: z.string().optional(),
   paid_amount: z.number().min(0).optional(),
+  bill_status: z.enum(['draft', 'completed', 'cancelled']).optional(),
 })
 
 type BillFormValues = z.infer<typeof billFormSchema>
@@ -39,6 +48,7 @@ interface SupplierBillFormProps {
     items?: SupplierBillItem[]
     notes?: string
     paid_amount?: number
+    bill_status?: BillStatus
   }
   onSubmit: (data: CreateSupplierBillRequest | UpdateSupplierBillRequest) => void
   isLoading?: boolean
@@ -50,6 +60,9 @@ interface CartItem extends SupplierBillItemRequest {
   id?: number
   name?: string
   sku?: string
+  product_name?: string
+  variant_name?: string
+  variant_sku?: string
 }
 
 export function SupplierBillForm({
@@ -67,6 +80,14 @@ export function SupplierBillForm({
       product_variant_id: item.product_variant_id,
       quantity: item.quantity,
       unit_cost: item.unit_cost,
+      product_name: item.product_name,
+      variant_name: item.variant_name,
+      variant_sku: item.variant_sku,
+      // For display purposes, create a name if we have product/variant names
+      name: item.product_name && item.variant_name
+        ? `${item.product_name} - ${item.variant_name}`
+        : item.variant_name || item.product_name || undefined,
+      sku: item.variant_sku,
     })) || []
   )
 
@@ -75,6 +96,7 @@ export function SupplierBillForm({
     defaultValues: {
       notes: initialData?.notes || '',
       paid_amount: initialData?.paid_amount || 0,
+      bill_status: initialData?.bill_status || 'draft',
     },
   })
 
@@ -103,7 +125,10 @@ export function SupplierBillForm({
           product_variant_id: variant.id,
           quantity,
           unit_cost: unitCost,
-          name: `${variant.product?.name} - ${variant.name}`,
+          product_name: variant.product?.name,
+          variant_name: variant.name,
+          variant_sku: variant.sku,
+          name: `${variant.product?.name || 'Product'} - ${variant.name}`,
           sku: variant.sku,
         },
       ])
@@ -149,6 +174,7 @@ export function SupplierBillForm({
       items: cartItems.map(({ id, name, sku, ...item }) => item),
       notes: values.notes,
       ...(isEdit ? {} : { paid_amount: values.paid_amount || 0 }),
+      ...(isEdit && values.bill_status ? { bill_status: values.bill_status } : {}),
     }
 
     onSubmit(data)
@@ -190,9 +216,22 @@ export function SupplierBillForm({
                       >
                         <div className="flex-1">
                           <div className="font-medium">
-                            {item.name || `Product Variant #${item.product_variant_id}`}
+                            {item.product_name && item.variant_name ? (
+                              <>
+                                {item.product_name} - {item.variant_name}
+                                {item.variant_sku && (
+                                  <span className="text-sm text-gray-500 ml-2">
+                                    (SKU: {item.variant_sku})
+                                  </span>
+                                )}
+                              </>
+                            ) : item.name ? (
+                              item.name
+                            ) : (
+                              `Product Variant #${item.product_variant_id}`
+                            )}
                           </div>
-                          {item.sku && (
+                          {!item.product_name && !item.variant_name && item.sku && (
                             <div className="text-sm text-gray-500">SKU: {item.sku}</div>
                           )}
                         </div>
@@ -300,6 +339,45 @@ export function SupplierBillForm({
                 </div>
               </CardContent>
             </Card>
+
+            {isEdit && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Bill Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <FormField
+                    control={form.control}
+                    name="bill_status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          disabled={isLoading}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Change the status of this bill
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardHeader>

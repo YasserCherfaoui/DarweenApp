@@ -1,3 +1,5 @@
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -5,13 +7,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Button } from '@/components/ui/button'
-import { useSupplierBill } from '@/hooks/queries/use-supplier-bills'
-import { BillItemList } from './BillItemList'
+import { useSupplierBill, useUpdateSupplierBill } from '@/hooks/queries/use-supplier-bills'
+import { useToast } from '@/hooks/use-toast'
 import { Link } from '@tanstack/react-router'
-import { Pencil, Trash2 } from 'lucide-react'
+import { CheckCircle, Pencil, Trash2, XCircle } from 'lucide-react'
+import { BillItemList } from './BillItemList'
 
 interface SupplierBillDetailsDialogProps {
   companyId: number
@@ -59,6 +60,47 @@ export function SupplierBillDetailsDialog({
   highlightedItemId,
 }: SupplierBillDetailsDialogProps) {
   const { data: bill, isLoading } = useSupplierBill(companyId, supplierId, billId)
+  const updateBill = useUpdateSupplierBill()
+  const { toast } = useToast()
+
+  const handleStatusChange = async (newStatus: 'completed' | 'cancelled' | 'draft') => {
+    if (!bill) return
+
+    const confirmMessage =
+      newStatus === 'completed'
+        ? 'Are you sure you want to mark this bill as completed?'
+        : newStatus === 'cancelled'
+        ? 'Are you sure you want to cancel this bill?'
+        : 'Are you sure you want to change this bill back to draft?'
+
+    if (!confirm(confirmMessage)) return
+
+    updateBill.mutate(
+      {
+        companyId,
+        supplierId,
+        billId,
+        data: {
+          bill_status: newStatus,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: 'Bill status updated',
+            description: `Bill status changed to ${newStatus}`,
+          })
+        },
+        onError: (error: any) => {
+          toast({
+            title: 'Failed to update bill status',
+            description: error.message || 'Failed to update bill status',
+            variant: 'destructive',
+          })
+        },
+      }
+    )
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -191,38 +233,82 @@ export function SupplierBillDetailsDialog({
           )}
         </div>
 
-        <div className="flex justify-end gap-2 border-t pt-4">
-          {bill && bill.bill_status === 'draft' && (
-            <>
-              <Link
-                to="/companies/$companyId/suppliers/$supplierId/bills/$billId/edit"
-                params={{
-                  companyId: companyId.toString(),
-                  supplierId: supplierId.toString(),
-                  billId: bill.id.toString(),
-                }}
-              >
-                <Button variant="outline">
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Edit Bill
-                </Button>
-              </Link>
-              {onDelete && (
+        <div className="flex justify-between items-center border-t pt-4">
+          <div className="flex gap-2">
+            {bill && bill.bill_status === 'draft' && (
+              <>
                 <Button
-                  variant="destructive"
-                  onClick={() => {
-                    if (confirm('Are you sure you want to delete this bill?')) {
-                      onDelete(bill.id)
-                      onOpenChange(false)
-                    }
+                  variant="default"
+                  onClick={() => handleStatusChange('completed')}
+                  disabled={updateBill.isPending}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Mark as Completed
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleStatusChange('cancelled')}
+                  disabled={updateBill.isPending}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Cancel Bill
+                </Button>
+              </>
+            )}
+            {bill && bill.bill_status === 'completed' && (
+              <Button
+                variant="outline"
+                onClick={() => handleStatusChange('draft')}
+                disabled={updateBill.isPending}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Revert to Draft
+              </Button>
+            )}
+            {bill && bill.bill_status === 'cancelled' && (
+              <Button
+                variant="outline"
+                onClick={() => handleStatusChange('draft')}
+                disabled={updateBill.isPending}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Revert to Draft
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {bill && bill.bill_status === 'draft' && (
+              <>
+                <Link
+                  to="/companies/$companyId/suppliers/$supplierId/bills/$billId/edit"
+                  params={{
+                    companyId: companyId.toString(),
+                    supplierId: supplierId.toString(),
+                    billId: bill.id.toString(),
                   }}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              )}
-            </>
-          )}
+                  <Button variant="outline">
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit Bill
+                  </Button>
+                </Link>
+                {onDelete && (
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      if (confirm('Are you sure you want to delete this bill?')) {
+                        onDelete(bill.id)
+                        onOpenChange(false)
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

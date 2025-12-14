@@ -1,14 +1,14 @@
-import { createRoute, useNavigate, useParams } from '@tanstack/react-router'
 import { RoleBasedLayout } from '@/components/layouts/RoleBasedLayout'
+import { SupplierBillForm } from '@/components/suppliers/SupplierBillForm'
 import { Button } from '@/components/ui/button'
 import { Loading } from '@/components/ui/loading'
-import { SupplierBillForm } from '@/components/suppliers/SupplierBillForm'
 import { useSupplierBill, useUpdateSupplierBill } from '@/hooks/queries/use-supplier-bills'
 import { useSupplier } from '@/hooks/queries/use-suppliers'
-import { ArrowLeft } from 'lucide-react'
-import type { UpdateSupplierBillRequest } from '@/types/api'
-import { rootRoute } from '@/main'
 import { useToast } from '@/hooks/use-toast'
+import { rootRoute } from '@/main'
+import type { UpdateSupplierBillRequest } from '@/types/api'
+import { createRoute, useNavigate, useParams } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
 
 export const EditSupplierBillRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -139,6 +139,7 @@ function EditSupplierBillPage() {
             items: bill.items || [],
             notes: bill.notes,
             paid_amount: bill.paid_amount,
+            bill_status: bill.bill_status,
           }}
           onSubmit={handleSubmit}
           isLoading={updateBill.isPending}
